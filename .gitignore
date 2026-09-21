@@ -1,0 +1,4 @@
+# 无构建产物、无 node_modules —— 这个项目是零依赖的纯静态站点
+.DS_Store
+*.log
+.chrome-profile/

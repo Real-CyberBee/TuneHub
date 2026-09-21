@@ -1,0 +1,21 @@
+{
+  "$schema": "https://riffle.dev/schema/v1/tuning.json",
+  "id": "pythagorean-3limit-12",
+  "version": "1.0.0",
+  "kind": "tuning",
+  "name": { "en": "Pythagorean (3-limit, 12 tones)", "zh": "五度相生律（三分损益，十二律）" },
+  "provenance": {
+    "sources": [
+      { "type": "theory", "citation": "由纯五度 3:2 反复叠置生成，模 2 归入八度。中国三分损益法与之同构。", "url": "https://en.xen.wiki/" }
+    ],
+    "accuracy": "theoretical",
+    "limitations": [
+      "纯五度叠置十二次不能闭合八度，剩余音差即毕达哥拉斯音差（约 23.46 音分）。",
+      "因此十二个音无法同时纯净；实际使用需选择'狼音'位置。本数据默认把音差置于最后一个五度。"
+    ]
+  },
+  "license": "CC0-1.0",
+  "contributors": ["@riffle-core"],
+  "tags": ["pythagorean", "just", "china", "ancient"],
+  "data": { "periodCents": 1200, "type": "formula", "sonicWeaveExpr": "sort(3^[-1..5] rdc 2)" }
+}

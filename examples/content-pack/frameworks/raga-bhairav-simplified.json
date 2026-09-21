@@ -1,0 +1,35 @@
+{
+  "$schema": "https://riffle.dev/schema/v1/framework.json",
+  "id": "raga-bhairav-simplified",
+  "version": "1.0.0",
+  "kind": "framework",
+  "name": { "en": "Raga Bhairav (simplified teaching model)", "zh": "拉格 拜拉夫（简化教学模型）" },
+  "provenance": {
+    "sources": [
+      { "type": "theory", "citation": "占位：需替换为权威文献", "url": "https://example.org/placeholder-verify-before-merge" }
+    ],
+    "accuracy": "simplified",
+    "limitations": [
+      "⚠️ 这是简化模型，不是该拉格的权威表达。真实演奏依赖口传的 pakad、alankar 以及大量未在此建模的即兴惯例。",
+      "仅建模：上行/下行音序、重点音、一条特征乐句、终止式倾向。",
+      "未建模：gamaka（装饰音/滑音）、不同 gharaana 的差异、时间与情绪关联。",
+      "音高使用 12-TET 近似，真实演奏中的 komal Re 与 komal Dha 存在浮动。"
+    ],
+    "culturalNote": "拉格是印度古典音乐的活态核心传统。本数据用于帮助用户理解'音阶不等于音乐体系'，不建议用于任何声称'正宗'的场景。"
+  },
+  "license": "CC-BY-4.0",
+  "contributors": ["@your-handle"],
+  "tags": ["india", "hindustani", "raga", "framework"],
+  "data": {
+    "scaleId": "bhairav-thaat-12tet",
+    "ascending": [0, 1, 4, 5, 7, 8, 11],
+    "descending": [11, 8, 7, 5, 4, 1, 0],
+    "emphasis": { "0": 1.0, "4": 0.55, "7": 0.35 },
+    "phrases": [
+      { "degrees": [0, 1, 4, 0], "weight": 0.5, "name": "pakad (simplified)" },
+      { "degrees": [7, 8, 7, 5, 4, 1, 0], "weight": 0.3, "name": "descending turn" }
+    ],
+    "direction": "ascending-first",
+    "cadence": { "approach": [7, 4, 1, 0], "weight": 0.35 }
+  }
+}

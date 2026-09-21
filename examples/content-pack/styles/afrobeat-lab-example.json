@@ -1,0 +1,38 @@
+{
+  "$schema": "https://riffle.dev/schema/v1/style.json",
+  "id": "afrobeat-lab-example",
+  "version": "1.0.0",
+  "kind": "style",
+  "name": { "en": "Afrobeat Lab (example style recipe)", "zh": "Afrobeat 实验室（风格配方示例）" },
+  "provenance": {
+    "sources": [
+      { "type": "design", "citation": "组合本仓库其它内容包的示例配方，用于演示 style 数据格式。", "url": "https://github.com/" }
+    ],
+    "accuracy": "simplified",
+    "limitations": [
+      "这是演示'风格配方如何写'的样例，不是对 Afrobeat 这一音乐类型的权威建模。",
+      "结构采用通用流行曲式，与真实 Afrobeat 的长曲式（常以层层叠加为主）不同。"
+    ],
+    "culturalNote": "Afrobeat 与其源头西非节奏传统是活态音乐文化。本配方仅演示数据结构。"
+  },
+  "license": "CC0-1.0",
+  "contributors": ["@riffle-core"],
+  "tags": ["afrobeat", "example", "polyrhythm"],
+  "data": {
+    "defaults": { "bpm": 108, "tuningId": "12-tet", "meter": "4/4" },
+    "voices": [
+      { "id": "bass", "role": "bass", "midiBase": 36, "range": 12, "voiceRef": "sub-bass", "rhythmRef": "afrobeat-tresillo-16", "density": 0.35 },
+      { "id": "perc", "role": "perc", "midiBase": 72, "range": 12, "voiceRef": "sub-bass", "rhythmRef": "afrobeat-tresillo-16", "density": 0.9 }
+    ],
+    "structure": [
+      { "section": "intro", "bars": 8, "density": 0.4 },
+      { "section": "main", "bars": 24, "density": 1.0 },
+      { "section": "outro", "bars": 8, "density": 0.2 }
+    ],
+    "constraints": [
+      { "op": "quantizeTime", "params": { "grid": "16n" } },
+      { "op": "normalizeVelocity", "params": { "curve": "inverseSqrt" } }
+    ],
+    "notes": "voiceRef 在示例中指向同一个内置音色，仅因样板包只提供了一个 voice。真实内容包应各配不同音色。此为纯声明式配方——没有一行算法。"
+  }
+}

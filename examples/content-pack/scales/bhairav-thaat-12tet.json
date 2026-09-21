@@ -1,0 +1,25 @@
+{
+  "$schema": "https://riffle.dev/schema/v1/scale.json",
+  "id": "bhairav-thaat-12tet",
+  "version": "1.0.0",
+  "kind": "scale",
+  "name": { "en": "Bhairav thaat (12-TET approximation)", "zh": "拜拉夫塔特（十二平均律近似）" },
+  "provenance": {
+    "sources": [
+      { "type": "theory", "citation": "Hindustani 十塔特（thaat）体系中的 Bhairav thaat。", "url": "https://en.wikipedia.org/wiki/Thaat" }
+    ],
+    "accuracy": "approximation",
+    "limitations": [
+      "以 12-TET 近似印度音高，丢失了真实演奏中的微分音浮动（尤其 komal Re 与 komal Dha）。",
+      "thaat 是分类框架，不是演奏音阶；实际的 raga 由 framework 层描述。"
+    ]
+  },
+  "license": "CC0-1.0",
+  "contributors": ["@riffle-core"],
+  "tags": ["india", "hindustani", "thaat"],
+  "data": {
+    "tuningId": "12-tet",
+    "degrees": [0, 1, 4, 5, 7, 8, 11],
+    "degreeNames": { "0": "Sa", "1": "komal Re", "4": "Shuddha Ma", "5": "Pa", "8": "komal Dha", "11": "komal Ni" }
+  }
+}

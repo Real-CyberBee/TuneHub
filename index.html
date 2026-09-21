@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Riffle · 掷音 — 点几下就有音乐</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0c11'/%3E%3Cpath d='M8 20c3-8 5-8 8 0s5 8 8 0' stroke='%23ffd166' stroke-width='2.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="./src/ui/style.css">
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <div class="brand">
+      <h1>Riffle</h1>
+      <span class="zh">掷音</span>
+    </div>
+    <p class="tagline">点几下，就有音乐</p>
+  </header>
+
+  <section class="presets" id="presets" aria-label="预设"></section>
+
+  <section class="stage">
+    <canvas id="viz" aria-label="音符可视化"></canvas>
+    <div class="hud">
+      <span id="seedLabel" title="作品种子：同样的种子永远得到同样的音乐">种子 —</span>
+      <span class="sep">·</span>
+      <span id="statLabel">—</span>
+    </div>
+  </section>
+
+  <section class="controls">
+    <div class="knobs">
+      <label class="knob">
+        <span class="kname">情绪</span>
+        <input type="range" id="mood" min="0" max="1" step="0.01" value="0.45">
+        <span class="kends"><b>幽暗</b><b>明亮</b></span>
+      </label>
+      <label class="knob">
+        <span class="kname">能量</span>
+        <input type="range" id="energy" min="0" max="1" step="0.01" value="0.55">
+        <span class="kends"><b>安静</b><b>热闹</b></span>
+      </label>
+      <label class="knob">
+        <span class="kname">速度</span>
+        <input type="range" id="bpm" min="56" max="168" step="1" value="92">
+        <span class="kends"><b>慢</b><b>快</b></span>
+      </label>
+    </div>
+
+    <div class="actions">
+      <button id="playBtn" class="primary">▶ 播放</button>
+      <button id="rerollBtn" title="换一个（保留锁定的声部）">🎲 换一个</button>
+      <button id="scaleBtn" title="换一种音阶（同一个种子）">🎼 换音阶</button>
+    </div>
+
+    <div class="voices" id="voices" aria-label="声部"></div>
+  </section>
+
+  <footer>
+    <div class="row">
+      <button id="shareBtn" class="ghost">🔗 复制分享链接</button>
+      <button id="exportBtn" class="ghost">⬇ 导出 WAV</button>
+      <button id="offlineBtn" class="ghost" title="从种子重新渲染，验证离线路径与实时播放一致">♻ 离线重渲染 10 秒</button>
+    </div>
+    <p class="hint" id="hint">
+      提示：拖动「情绪 / 能量 / 速度」会立刻重新生成。锁住喜欢的声部再「换一个」，只改其余的。
+    </p>
+  </footer>
+
+</div>
+
+<script type="module" src="./src/ui/app.mjs"></script>
+</body>
+</html>

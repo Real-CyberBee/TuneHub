@@ -1,0 +1,32 @@
+{
+  "$schema": "https://riffle.dev/schema/v1/rhythm.json",
+  "id": "afrobeat-tresillo-16",
+  "version": "1.0.0",
+  "kind": "rhythm",
+  "name": { "en": "Afrobeat tresillo feel over 16 steps", "zh": "Afrobeat 三连音型（16 步栅格上的 3:2 交叉）" },
+  "provenance": {
+    "sources": [
+      { "type": "transcription", "citation": "占位：3-3-2 tresillo 作为西非/加勒比律动基础的教学转写", "url": "https://example.org/placeholder-verify-before-merge" }
+    ],
+    "accuracy": "simplified",
+    "limitations": [
+      "教学用简化谱，非某一具体录音的转写，也不代表整个非洲节拍传统。",
+      "3:2 交叉节奏在 16 步 16 分音符栅格上是被'逼近'的，不是精确的 3 等分。真实演奏的微时值偏移无法用等距栅格表达。"
+    ]
+  },
+  "license": "CC0-1.0",
+  "contributors": ["@riffle-core"],
+  "tags": ["afrobeat", "west-africa", "tresillo", "polyrhythm"],
+  "data": {
+    "cycleSteps": 16,
+    "layers": [
+      { "voice": "bell", "steps": [1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,0] },
+      { "voice": "kick", "steps": [1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0] },
+      { "voice": "snare", "steps": [0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0] },
+      { "voice": "hat", "steps": [1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0] }
+    ],
+    "swing": 0.12,
+    "accentPattern": [1.0,0.6,0.78,0.6,0.9,0.6,0.78,0.6,0.92,0.6,0.78,0.6,0.86,0.6,0.7,0.58],
+    "polyrhythm": { "against": 3, "mode": "cross", "note": "tresillo（3-3-2）落在 16 分音符栅格上时，与 4 分音符的 2 分结构形成 3:2 交叉。" }
+  }
+}

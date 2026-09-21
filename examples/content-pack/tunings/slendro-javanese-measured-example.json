@@ -1,0 +1,28 @@
+{
+  "$schema": "https://riffle.dev/schema/v1/tuning.json",
+  "id": "slendro-javanese-measured-example",
+  "version": "1.0.0",
+  "kind": "tuning",
+  "name": { "en": "Javanese Slendro (one measured ensemble)", "zh": "爪哇斯连德罗（单套合奏实测）" },
+  "provenance": {
+    "sources": [
+      { "type": "measurement", "citation": "占位：需替换为真实测量文献", "url": "https://example.org/placeholder-verify-before-merge" }
+    ],
+    "accuracy": "measured",
+    "limitations": [
+      "仅代表某一套特定甘美兰合奏的测量结果。其他合奏、其他地区的斯连德罗调音各不相同，差异可达数十音分。",
+      "斯连德罗常被描述为'约五等分八度'，但实测并非严格等分。本数据保留实测值，不做等分近似。"
+    ],
+    "culturalNote": "斯连德罗是活态传统。本数据用于工具与教育目的，不代表该传统的权威调音。"
+  },
+  "license": "CC-BY-SA-4.0",
+  "contributors": ["@your-handle"],
+  "tags": ["indonesia", "gamelan", "non-equal", "measured"],
+  "data": {
+    "periodCents": 1200,
+    "type": "measured",
+    "referenceHz": 221.5,
+    "frequenciesHz": [221.5, 249.1, 291.8, 331.2, 372.6],
+    "notes": "数值为占位示例，合入前必须替换为可溯源的实测数据。"
+  }
+}

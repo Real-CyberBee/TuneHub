@@ -1,0 +1,27 @@
+{
+  "$schema": "https://riffle.dev/schema/v1/voice.json",
+  "id": "sub-bass",
+  "version": "1.0.0",
+  "kind": "voice",
+  "name": { "en": "Sub Bass", "zh": "超低音" },
+  "provenance": {
+    "sources": [ { "type": "design", "citation": "Riffle 内置合成音色配方。", "url": "https://github.com/" } ],
+    "accuracy": "theoretical",
+    "limitations": ["纯合成音色，不模仿任何具体乐器。"]
+  },
+  "license": "CC0-1.0",
+  "contributors": ["@riffle-core"],
+  "tags": ["synth", "bass", "subtractive"],
+  "data": {
+    "kind": "subtractive",
+    "capabilities": { "offlineRenderable": true, "requiresAudioWorklet": false, "polyphony": 4 },
+    "envelope": { "attack": 0.008, "decay": 0.8, "sustain": 0.0, "release": 0.12 },
+    "oscillators": [
+      { "type": "sine", "detuneCents": 0, "gain": 1.0 },
+      { "type": "triangle", "detuneCents": 7, "gain": 0.18 }
+    ],
+    "filter": { "type": "lowpass", "frequencyHz": 320, "q": 0.7, "envelopeAmount": 0.35, "envelopeDecay": 0.25 },
+    "effects": [ { "type": "saturator", "amount": 0.25 } ],
+    "gainDb": -6.0
+  }
+}
