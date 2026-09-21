@@ -472,7 +472,7 @@ function bindControls() {
     await regenerate({ reroll: 'all' });
     setHint(state.locked.size
       ? `已重掷未锁定的声部（保留了 ${[...state.locked].map((v) => VOICES[v].label).join('、')}）。`
-      : '换了一个新作品。想留住某个声部？点它下面的「点击静音」旁的数字换成「🔒 已锁」。');
+      : '换了一个新作品。想留住某个声部？点它卡片上的「静音」右侧切换成「🔒 锁定」。');
     if (player.playing) await player.play(0);
   });
   document.getElementById('scaleBtn').addEventListener('click', async () => {
