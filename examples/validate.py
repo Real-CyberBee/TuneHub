@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2025 Real-CyberBee
 """
 TuneHub 内容包校验器。
 

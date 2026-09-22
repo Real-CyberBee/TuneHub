@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2025 Real-CyberBee
 /**
  * 离线渲染与导出。
  *

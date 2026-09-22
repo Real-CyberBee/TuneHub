@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2025 Real-CyberBee
 /**
  * 生成器：在"好听的子空间"里随机。
  *

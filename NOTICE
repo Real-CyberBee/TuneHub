@@ -1,0 +1,23 @@
+TuneHub · 音枢
+Copyright 2025 Real-CyberBee
+
+This product includes software developed as part of the TuneHub project
+(https://github.com/Real-CyberBee/TuneHub).
+
+-------------------------------------------------------------------------------
+Third-party components
+-------------------------------------------------------------------------------
+
+TuneHub 的运行时**不包含任何第三方依赖**。全部音频合成、调度、离线渲染与
+WAV 编码均基于浏览器原生的 Web Audio API 与 ES Module 实现。
+
+开发与测试期使用的工具（不随本项目分发）：
+  - Node.js（用于运行测试与本地静态服务器）
+
+归档内容：
+  - prototype/original-demo.html 为本项目的起点示例，非本项目原创代码，
+    仅作历史归档保留，不构成分发的一部分。
+
+设计文档 docs/archive/ 中提及的第三方项目（Tone.js、sonic-weave、Strudel、
+Scale Workshop、generative.fm 等）均**未被复制进本仓库**，仅为调研记录中的
+名称与链接引用，各自版权归其原作者所有。

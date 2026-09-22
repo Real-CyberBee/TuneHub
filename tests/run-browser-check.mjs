@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2025 Real-CyberBee
 #!/usr/bin/env node
 /**
  * 无头浏览器自检运行器。

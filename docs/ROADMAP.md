@@ -25,8 +25,8 @@
 
 ## 开工前（半天）
 
-- [ ] 确定主许可（建议 **Apache-2.0**）
-- [ ] 内容数据独立仓库
+- [x] 确定主许可：**Apache-2.0** ✅（LICENSE + NOTICE 已就绪）
+- [ ] 内容数据独立仓库（待拍板）
 - [ ] 复核依赖许可证（`docs/archive/99-verification-notes.md` §5 有批量脚本；**必须读仓库 LICENSE 原文，不信 npm 元数据**）
 - [ ] 技术栈：TypeScript + Vite + pnpm workspaces
 - [ ] CI 许可证卡口（GPL/AGPL 即失败）

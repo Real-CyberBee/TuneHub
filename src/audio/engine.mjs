@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2025 Real-CyberBee
 /**
  * 音频引擎：把内核产出的事件流变成声音。
  *

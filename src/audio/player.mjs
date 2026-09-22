@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2025 Real-CyberBee
 /**
  * 实时播放器：前瞻调度 + 可跳转。
  *

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2025 Real-CyberBee
 /**
  * 浏览器内自检。纯 Node 测不到的部分都在这里：
  *   - OfflineAudioContext 区间渲染（导出路径的核心）

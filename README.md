@@ -1,5 +1,9 @@
 # TuneHub · 音枢
 
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![零依赖](https://img.shields.io/badge/dependencies-0-brightgreen.svg)](#跑起来)
+[![测试](https://img.shields.io/badge/tests-41%20%2B%2012%20passing-brightgreen.svg)](#验证)
+
 > **点几下，就有音乐。**
 > 开源的、浏览器优先的音乐生成实验室。
 
@@ -142,6 +146,12 @@ MVP 里 `SCALES`、`PATCHES`（音色配方）、`RHYTHM_PATTERNS` 已经是**�
 
 ## 许可
 
-尚未最终确定（建议 **Apache-2.0**）。在正式确定前请勿用于商业分发。
+**Apache License 2.0** —— 见 [LICENSE](LICENSE) 与 [NOTICE](NOTICE)。
 
-`prototype/original-demo.html` 是项目的起点归档，非本项目原创代码。
+选择 Apache-2.0 而非 MIT 的原因：它含**明确的专利授权条款**，对一个涉及
+DSP 与生成算法的项目更稳妥，同时仍与所有推荐依赖兼容。
+
+**运行时零第三方依赖**，因此不存在许可证传染问题。CI 中仍建议保留一道
+卡口：扫描依赖树，出现 `GPL`/`AGPL` 即构建失败（详见 `docs/ARCHITECTURE.md` §5）。
+
+`prototype/original-demo.html` 是项目的起点归档，非本项目原创代码，仅供历史参考。
