@@ -1,5 +1,5 @@
 /**
- * Riffle 界面。
+ * TuneHub 界面。
  *
  * 这个文件只做三件事：把内核的事件流画出来、把用户的点击翻译成配置变化、驱动播放器。
  * 它**不包含任何音乐生成逻辑**——那是 src/core 的职责。
@@ -387,8 +387,8 @@ async function doExport() {
     const total = state.piece.totalSeconds;
     await exportWav(state.piece.events, {
       start: 0, duration: total, tail: 2.5, seed: state.seed,
-    }, `riffle-${state.seed}.wav`);
-    setHint(`已导出 ${Math.round(total)} 秒 WAV（riffle-${state.seed}.wav）。`, 'good');
+    }, `tunehub-${state.seed}.wav`);
+    setHint(`已导出 ${Math.round(total)} 秒 WAV（tunehub-${state.seed}.wav）。`, 'good');
   } catch (err) {
     setHint(`导出失败：${err.message}`, 'warn');
   } finally {

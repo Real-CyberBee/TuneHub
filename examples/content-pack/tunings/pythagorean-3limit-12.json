@@ -1,5 +1,5 @@
 {
-  "$schema": "https://riffle.dev/schema/v1/tuning.json",
+  "$schema": "https://tunehub.dev/schema/v1/tuning.json",
   "id": "pythagorean-3limit-12",
   "version": "1.0.0",
   "kind": "tuning",
@@ -15,7 +15,7 @@
     ]
   },
   "license": "CC0-1.0",
-  "contributors": ["@riffle-core"],
+  "contributors": ["@tunehub-core"],
   "tags": ["pythagorean", "just", "china", "ancient"],
   "data": { "periodCents": 1200, "type": "formula", "sonicWeaveExpr": "sort(3^[-1..5] rdc 2)" }
 }

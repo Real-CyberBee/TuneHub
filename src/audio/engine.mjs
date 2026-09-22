@@ -107,7 +107,7 @@ function hashString(str) {
 
 /** 由种子 + 标签派生一个稳定的 32-bit 起点。 */
 function seedBase(seed, label) {
-  return (hashString(String(seed ?? 'riffle')) ^ hashString(label)) >>> 0;
+  return (hashString(String(seed ?? 'tunehub')) ^ hashString(label)) >>> 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -119,7 +119,7 @@ function seedBase(seed, label) {
  * 好处：不需要下载任何 IR 资源，没有许可问题，房间大小/亮度可参数化，
  * 且**由种子决定**——同种子导出两次得到完全相同的文件。
  */
-export function createReverbIR(ctx, { seconds = 2.2, decay = 3.0, brightness = 0.35, seed = 'riffle' } = {}) {
+export function createReverbIR(ctx, { seconds = 2.2, decay = 3.0, brightness = 0.35, seed = 'tunehub' } = {}) {
   const rate = ctx.sampleRate;
   const len = Math.max(1, Math.floor(rate * seconds));
   const buf = ctx.createBuffer(2, len, rate);
@@ -151,7 +151,7 @@ export function createReverbIR(ctx, { seconds = 2.2, decay = 3.0, brightness = 0
  * 在给定 AudioContext 上播放一个音。
  * 这个函数是**实时与离线共用的**——这是"同种子实时/离线一致"的关键。
  */
-export function playNoteOn(ctx, destination, event, noiseSeed = 'riffle') {
+export function playNoteOn(ctx, destination, event, noiseSeed = 'tunehub') {
   const t = event.startTime;
   const patch = PATCHES[event.voice] ?? PATCHES.melody;
   const dur = Math.max(0.04, event.duration);
@@ -214,7 +214,7 @@ export function playNoteOn(ctx, destination, event, noiseSeed = 'riffle') {
   }
 }
 
-function playPercOn(ctx, destination, event, t, noiseSeed = 'riffle') {
+function playPercOn(ctx, destination, event, t, noiseSeed = 'tunehub') {
   const cfg = PERC_TUNING[event.timbre] ?? PERC_TUNING.kick;
   const vel = Math.max(0.05, Math.min(1, event.velocity));
   const out = ctx.createGain();
@@ -275,7 +275,7 @@ function playPercOn(ctx, destination, event, t, noiseSeed = 'riffle') {
 // 总线：混音链（压缩 + 限制 + 混响发送）
 // ---------------------------------------------------------------------------
 
-export function buildMasterBus(ctx, { reverbAmount = 0.34, volume = 0.85, seed = 'riffle' } = {}) {
+export function buildMasterBus(ctx, { reverbAmount = 0.34, volume = 0.85, seed = 'tunehub' } = {}) {
   const input = ctx.createGain();
   input.gain.value = 1;
 

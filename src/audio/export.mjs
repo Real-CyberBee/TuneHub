@@ -30,7 +30,7 @@ export async function renderRange(events, opts = {}) {
     fadeOut = 0.35,
     volume = 0.85,
     reverbAmount = 0.34,
-    seed = 'riffle',
+    seed = 'tunehub',
   } = opts;
 
   const total = duration + tail;
@@ -111,7 +111,7 @@ export function encodeWav(audioBuffer) {
 }
 
 /** 便捷：渲染并直接下载。 */
-export async function exportWav(events, opts = {}, filename = 'riffle.wav') {
+export async function exportWav(events, opts = {}, filename = 'tunehub.wav') {
   const buf = await renderRange(events, opts);
   const blob = encodeWav(buf);
   triggerDownload(blob, filename);

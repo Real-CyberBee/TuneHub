@@ -23,7 +23,7 @@ const TARGET_URL = (process.argv[2] || 'http://127.0.0.1:8765').replace(/\/$/, '
 const CHROME = process.env.CHROME_BIN || 'google-chrome';
 const PORT = 9222 + Math.floor(Math.random() * 500);
 
-const profileDir = mkdtempSync(join(tmpdir(), 'riffle-cdp-'));
+const profileDir = mkdtempSync(join(tmpdir(), 'tunehub-cdp-'));
 let child = null;
 
 function log(...a) {

@@ -1,4 +1,4 @@
-# Riffle · 架构
+# TuneHub · 架构
 
 > 三条主线：**内核薄而深**、**贡献写数据**、**所有形态走同一条 Action 通道**。
 
@@ -235,8 +235,8 @@ DSL 头部带 `v1`；Action **只增不改**；未知 Action **必须拒绝并�
 
 | | 仓库 | 许可 | 发版 |
 |---|---|---|---|
-| 源码 | `riffle` | Apache-2.0（建议） | 语义化版本 |
-| 内容 | `riffle-content` | **逐条独立**（CC0/CC-BY/CC-BY-SA） | 持续更新 |
+| 源码 | `tunehub` | Apache-2.0（建议） | 语义化版本 |
+| 内容 | `tunehub-content` | **逐条独立**（CC0/CC-BY/CC-BY-SA） | 持续更新 |
 
 理由：音阶数据、田野测量、社区贡献的许可各不相同，混进代码仓库会造成许可证污染。
 
@@ -261,7 +261,7 @@ apps/
   lab/                  形态①：随机生成实验室
   game-rhythm/          形态②：节奏游戏
   editor/               内容编辑器（贡献飞轮起点）
-skills/                 ★ Riffle Skill（Markdown，社区可贡献）
+skills/                 ★ TuneHub Skill（Markdown，社区可贡献）
 templates/              可视化/算子贡献模板
 ```
 

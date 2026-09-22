@@ -9,7 +9,7 @@
 
 ### 1.1 三巨头的定位差异
 
-| 引擎 | 抽象层次 | 许可 | 适合 Riffle 的地方 |
+| 引擎 | 抽象层次 | 许可 | 适合 TuneHub 的地方 |
 |---|---|---|---|
 | **Tone.js** | 高（"DAW in a browser"） | MIT | 乐器、效果器、`Transport` 调度、`Tone.Offline` 离线渲染 |
 | **Elementary Audio** | 中（函数式信号图） | 见 04 | 需要声明式 DSP 图时；编译到 AudioWorklet |
@@ -41,7 +41,7 @@ Web Audio 是 W3C 规范，MN 有完整文档。关键节点与用途：
 **`AudioParam` 自动化**是表达力的核心：`setValueAtTime`、`linearRampToValueAtTime`、`exponentialRampToValueAtTime`、`setTargetAtTime`、`setValueCurveAtTime`、`cancelAndHoldAtTime`。
 > demo 里 `exponentialRampToValueAtTime(0.001, ...)` 就是标准包络写法——注意**指数斜坡不能到 0**（数学上不成立），必须用极小值如 0.001。
 
-**离线 vs 实时**：`OfflineAudioContext` 用于渲染；关键差异是**它不与墙钟同步，跑得比实时快**，因此任何基于 `setTimeout`/`requestAnimationFrame` 的调度都会失效。这是 Riffle 内核必须时钟无关的根本原因。
+**离线 vs 实时**：`OfflineAudioContext` 用于渲染；关键差异是**它不与墙钟同步，跑得比实时快**，因此任何基于 `setTimeout`/`requestAnimationFrame` 的调度都会失效。这是 TuneHub 内核必须时钟无关的根本原因。
 
 ### 1.3 AudioWorklet 与 WASM DSP
 
@@ -58,7 +58,7 @@ AudioWorklet 是当前自定义 DSP 的正路（`ScriptProcessorNode` 已废弃�
 
 ## 2. 算法作曲 / 现场编码引擎
 
-这些是"约束即乐谱"的思想源头，也是 Riffle 生成层的参考。
+这些是"约束即乐谱"的思想源头，也是 TuneHub 生成层的参考。
 
 | 项目 | 语言/栈 | 许可 | 值得借鉴 |
 |---|---|---|---|
@@ -72,7 +72,7 @@ AudioWorklet 是当前自定义 DSP 的正路（`ScriptProcessorNode` 已废弃�
 | **ChucK / WebChucK** | C++/WASM | 见 04 | 强时序（strongly-timed）语言，适合精确节奏 |
 | **Pure Data / libpd / pd4web** | C | BSD | 补丁式数据流编程，可跑在 WASM |
 
-### 对 Riffle 的核心启发：**约束应该像 Tidal 的 Pattern 一样可代数组合**
+### 对 TuneHub 的核心启发：**约束应该像 Tidal 的 Pattern 一样可代数组合**
 
 demo 的 `if (mode === 'music')` 是"模式开关"；Tidal 的做法是 `n("0 2 4 7 9").fast(2).every(4, rev)`——**每个操作返回新的模式**，可无限叠加。我们的 `Constraint` 应当是同一哲学：
 
@@ -100,7 +100,7 @@ const piece = generate(seed)
 | **Stable Audio Open** | 权重许可需确认 | 同上 |
 | **Riffusion** | 见 04 | 频谱图扩散；实验性强 |
 
-> **判断（重要）**：ML 生成与 Riffle 的核心命题（**律制与音乐体系的多样性**）存在方向性冲突。
+> **判断（重要）**：ML 生成与 TuneHub 的核心命题（**律制与音乐体系的多样性**）存在方向性冲突。
 > 这些模型几乎全部在 12-TET 西方音乐上训练，它们会**抹平**而不是**展现**不同律制的差异。要"让用户听见世界的差异"，确定性算法 + 真实律制数据是更合适的技术路线。
 > 建议：**ML 作为后期可选插件，不做核心**。
 
@@ -124,7 +124,7 @@ const piece = generate(seed)
 
 ## 5. 可复现随机性
 
-这是 Riffle 的地基，必须一次做对。
+这是 TuneHub 的地基，必须一次做对。
 
 ### 5.1 PRNG 选择
 
@@ -156,7 +156,7 @@ const piece = generate(seed)
 - 全部塞进 URL fragment（不进服务端日志，且无后端也能分享）
 
 ```
-https://riffle.example/#v1.7f3a91c2.<base64url-config>
+https://tunehub.example/#v1.7f3a91c2.<base64url-config>
 ```
 
 **必须带版本号 `v1`**——否则将来算子语义变更会让旧链接失效。旧版本配置需要用**保留的旧算子实现**回放，因此算子实现要有版本化意识。

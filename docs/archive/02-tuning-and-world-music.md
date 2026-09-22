@@ -38,7 +38,7 @@
 
 规范由 Manuel Op de Coul 维护于 Huygens-Fokker 基金会网站。这是**跨软件交换律制的通用格式**——支持它的工具包括 Scala、Surge XT、Wilsonic、Scale Workshop 等。
 
-**建议**：Riffle 以 `.scl`/`.kbm` 作为**导入/导出格式**，内部用更丰富的数据结构。
+**建议**：TuneHub 以 `.scl`/`.kbm` 作为**导入/导出格式**，内部用更丰富的数据结构。
 
 ### 2.2 关键软件与库
 

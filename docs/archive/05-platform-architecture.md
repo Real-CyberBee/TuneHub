@@ -89,7 +89,7 @@
 
 ```jsonc
 {
-  "$schema": "https://riffle.dev/schema/v1/tuning.json",
+  "$schema": "https://tunehub.dev/schema/v1/tuning.json",
   "id": "slendro-javanese-kraton-1983",     // 全局唯一，kebab-case
   "version": "1.0.0",
   "kind": "tuning",                          // tuning|scale|framework|rhythm|style|voice|theme
@@ -228,8 +228,8 @@
 
 | | 仓库 | 许可 | 发版节奏 |
 |---|---|---|---|
-| **源码** | `riffle` | Apache-2.0 | 语义化版本 |
-| **内容** | `riffle-content` | **逐条独立许可**（CC0/CC-BY/CC-BY-SA） | 持续更新，无需发版 |
+| **源码** | `tunehub` | Apache-2.0 | 语义化版本 |
+| **内容** | `tunehub-content` | **逐条独立许可**（CC0/CC-BY/CC-BY-SA） | 持续更新，无需发版 |
 
 理由见 `04-licensing.md`：音阶数据、田野测量、社区贡献的许可各不相同，混进代码仓库会造成许可证污染。
 
@@ -446,7 +446,7 @@ interface Engine {
 单体仓库（monorepo），但**内容与代码分离**：
 
 ```
-riffle/                        # 代码仓库 (Apache-2.0)
+tunehub/                        # 代码仓库 (Apache-2.0)
 ├── packages/
 │   ├── core/                      # L1 内核：零依赖，<3000 行
 │   ├── content-schema/            # ★ JSON Schema 定义 + 校验器
@@ -465,7 +465,7 @@ riffle/                        # 代码仓库 (Apache-2.0)
     ├── viz-template/              # 可视化贡献模板
     └── operator-template/         # 算子贡献模板
 
-riffle-content/                # 内容仓库 (逐条许可)
+tunehub-content/                # 内容仓库 (逐条许可)
 ├── tunings/
 ├── scales/
 ├── frameworks/

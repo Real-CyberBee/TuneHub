@@ -1,5 +1,5 @@
 {
-  "$schema": "https://riffle.dev/schema/v1/rhythm.json",
+  "$schema": "https://tunehub.dev/schema/v1/rhythm.json",
   "id": "afrobeat-tresillo-16",
   "version": "1.0.0",
   "kind": "rhythm",
@@ -15,7 +15,7 @@
     ]
   },
   "license": "CC0-1.0",
-  "contributors": ["@riffle-core"],
+  "contributors": ["@tunehub-core"],
   "tags": ["afrobeat", "west-africa", "tresillo", "polyrhythm"],
   "data": {
     "cycleSteps": 16,

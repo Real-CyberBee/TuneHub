@@ -1,5 +1,5 @@
 {
-  "$schema": "https://riffle.dev/schema/v1/style.json",
+  "$schema": "https://tunehub.dev/schema/v1/style.json",
   "id": "afrobeat-lab-example",
   "version": "1.0.0",
   "kind": "style",
@@ -16,7 +16,7 @@
     "culturalNote": "Afrobeat 与其源头西非节奏传统是活态音乐文化。本配方仅演示数据结构。"
   },
   "license": "CC0-1.0",
-  "contributors": ["@riffle-core"],
+  "contributors": ["@tunehub-core"],
   "tags": ["afrobeat", "example", "polyrhythm"],
   "data": {
     "defaults": { "bpm": 108, "tuningId": "12-tet", "meter": "4/4" },

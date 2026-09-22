@@ -25,7 +25,7 @@ export class Player {
     this.muted = new Set();
     this.onProgress = null;
     // 噪声（混响 IR / 打击底噪）也由种子派生，保证实时与离线一致
-    this.noiseSeed = 'riffle';
+    this.noiseSeed = 'tunehub';
   }
 
   get supported() {

@@ -1,5 +1,5 @@
 {
-  "$schema": "https://riffle.dev/schema/v1/framework.json",
+  "$schema": "https://tunehub.dev/schema/v1/framework.json",
   "id": "raga-bhairav-simplified",
   "version": "1.0.0",
   "kind": "framework",

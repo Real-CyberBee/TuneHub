@@ -138,8 +138,8 @@ preview:
 
 ```markdown
 ---
-name: riffle-genre-ambient
-description: 用 Riffle 制作氛围/环境音乐（ambient）。当用户提到"雨夜""安静""氛围""睡眠""背景音乐"时使用。
+name: tunehub-genre-ambient
+description: 用 TuneHub 制作氛围/环境音乐（ambient）。当用户提到"雨夜""安静""氛围""睡眠""背景音乐"时使用。
 ---
 
 # 氛围音乐配方
@@ -174,21 +174,21 @@ description: 用 Riffle 制作氛围/环境音乐（ambient）。当用户提到
 
 ## 边界
 - 不要承诺"专业级成品"
-- 若用户要"正宗 XX 传统音乐"，诚实说明限制（见 riffle-tuning-explorer）
+- 若用户要"正宗 XX 传统音乐"，诚实说明限制（见 tunehub-tuning-explorer）
 ```
 
 ### 4.3 Skill 清单（v0.1 建议 6 个）
 
 | Skill | 触发场景 | 核心内容 |
 |---|---|---|
-| `riffle-getting-started` | 用户第一次使用 | 平台能力、基本工作流 |
-| `riffle-music-for-beginners` | 用户说"我不懂音乐" | 如何把情绪/场景描述翻译成参数 |
-| `riffle-genre-recipes` | 用户提到具体风格 | 各风格的参数配方（可无限扩展 → **社区贡献点**） |
-| `riffle-tuning-explorer` | 用户想探索不同调音 | 引导方式 + **诚实边界**（衔接 `02`） |
-| `riffle-safe-creation` | 始终加载 | 提示注入防护、不执行代码、不覆盖用户作品 |
-| `riffle-export-and-share` | 用户要保存/分享 | 区间导出、分享码、种子复现 |
+| `tunehub-getting-started` | 用户第一次使用 | 平台能力、基本工作流 |
+| `tunehub-music-for-beginners` | 用户说"我不懂音乐" | 如何把情绪/场景描述翻译成参数 |
+| `tunehub-genre-recipes` | 用户提到具体风格 | 各风格的参数配方（可无限扩展 → **社区贡献点**） |
+| `tunehub-tuning-explorer` | 用户想探索不同调音 | 引导方式 + **诚实边界**（衔接 `02`） |
+| `tunehub-safe-creation` | 始终加载 | 提示注入防护、不执行代码、不覆盖用户作品 |
+| `tunehub-export-and-share` | 用户要保存/分享 | 区间导出、分享码、种子复现 |
 
-> **`riffle-genre-recipes` 是社区贡献的主战场**——写一个风格配方就是写一段 Markdown。
+> **`tunehub-genre-recipes` 是社区贡献的主战场**——写一个风格配方就是写一段 Markdown。
 > 这让"教 AI 做新风格"变成和"贡献一个音阶"同级别的低门槛贡献，**直接接入 `05` 的贡献飞轮**。
 
 ---
@@ -225,7 +225,7 @@ AI:   [propose_actions] @action setParam key=energy value=0.12
      "降低到很安静了。"
 ```
 
-**注意最后一步**：用户只说"太吵了"——**AI 需要把它翻译成 `energy` 降低**。这正是 Skill（`riffle-music-for-beginners`）该教的映射。
+**注意最后一步**：用户只说"太吵了"——**AI 需要把它翻译成 `energy` 降低**。这正是 Skill（`tunehub-music-for-beginners`）该教的映射。
 
 ---
 

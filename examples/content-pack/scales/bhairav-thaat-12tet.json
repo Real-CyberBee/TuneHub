@@ -1,5 +1,5 @@
 {
-  "$schema": "https://riffle.dev/schema/v1/scale.json",
+  "$schema": "https://tunehub.dev/schema/v1/scale.json",
   "id": "bhairav-thaat-12tet",
   "version": "1.0.0",
   "kind": "scale",
@@ -15,7 +15,7 @@
     ]
   },
   "license": "CC0-1.0",
-  "contributors": ["@riffle-core"],
+  "contributors": ["@tunehub-core"],
   "tags": ["india", "hindustani", "thaat"],
   "data": {
     "tuningId": "12-tet",

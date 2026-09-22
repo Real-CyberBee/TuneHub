@@ -1,5 +1,5 @@
 {
-  "$schema": "https://riffle.dev/schema/v1/tuning.json",
+  "$schema": "https://tunehub.dev/schema/v1/tuning.json",
   "id": "slendro-javanese-measured-example",
   "version": "1.0.0",
   "kind": "tuning",

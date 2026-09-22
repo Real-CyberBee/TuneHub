@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Riffle 本地静态服务器。
+TuneHub 本地静态服务器。
 
 用法：
     python3 serve.py            # 默认 8765 端口
@@ -38,7 +38,7 @@ if __name__ == "__main__":
     os.chdir(ROOT)
     socketserver.TCPServer.allow_reuse_address = True
     with socketserver.TCPServer(("127.0.0.1", PORT), Handler) as httpd:
-        print(f"Riffle 已启动： http://127.0.0.1:{PORT}/")
+        print(f"TuneHub 已启动： http://127.0.0.1:{PORT}/")
         print("按 Ctrl+C 停止")
         try:
             httpd.serve_forever()
