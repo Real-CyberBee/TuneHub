@@ -282,7 +282,10 @@ def apply_certificate(domain: str, timeout_seconds: int = 900) -> str:
     print(f"  ⏳ 已提交免费 DV 证书申请：{cert_id}（DNS 自动验证，通常几分钟内签发）")
     deadline = time.time() + timeout_seconds
     while time.time() < deadline:
-        info = ssl("DescribeCertificate", {"CertificateId": cert_id}).get("Certificate", {})
+        # DescribeCertificate 把证书字段直接放在 Response 顶层（老接口才包一层
+        # Certificate），所以两种形状都要认。
+        result = ssl("DescribeCertificate", {"CertificateId": cert_id})
+        info = result.get("Certificate") or result
         status = info.get("Status")
         if status == 1:
             print(f"  ✅ 证书已颁发：{cert_id}（{info.get('Domain')}）")
