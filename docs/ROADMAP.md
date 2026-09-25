@@ -1,226 +1,65 @@
-# TuneHub · 路线图
+# TuneHub Roadmap
 
-> 排期遵循一个原则：**不好听就不要做下一步**，否则会做出"好操作但难听"的产品——那是最糟的结果。
-> 论证见 `OVERVIEW.md` 与 `ARCHITECTURE.md`。
+> Do not advance on the assumption that the product is ready if the music does not sound good. Listening quality is the prerequisite for interaction and growth. See [Overview](OVERVIEW.md) and [Architecture](ARCHITECTURE.md).
 
-## 进度总览
+## Status overview
 
-| 阶段 | 状态 |
+| Milestone | Status |
 |---|---|
-| M0 内核抽离 | ✅ **已完成** |
-| M1 好听 | 🟡 **骨架已完成**（悦耳度加权、音区隔离、混音链、宏观结构）；缺人工盲测过的预设库与更多音色 |
-| M2 好玩（三旋钮 + 锁与重掷） | ✅ **已完成** |
-| M2.5 AI 融合（MCP Server + Skill） | ⬜ 未开始 |
-| M3 第一个游戏 | ⬜ 未开始 |
-| M4 内容生态 | 🟡 JSON 样板与校验器已就绪（`examples/`），作者侧规范转向 TypeScript 内容包，均未接入运行时 |
-| M5 导出 | 🟡 引擎已支持任意区间；界面只暴露"导出整首" |
-| M6 深度模式（律制/框架） | ⬜ 未开始（`Pitch` 抽象已留好） |
-| M7 社区化 | ⬜ 未开始 |
+| M0 Core extraction | Complete |
+| M1 Listening quality | Core constraints and mix chain exist; curated presets and formal listening studies remain |
+| M2 Accessible controls | Complete: mood, energy, tempo, lock, reroll, and sharing |
+| M2.5 AI integration | Not started: MCP server and Skills |
+| M3 First game | Not started |
+| M4 Content ecosystem | Built-in reviewed pack exists; broader authoring, import, and contribution workflow remains |
+| M5 Export | WAV, stems, MIDI, Score, offline rendering, and range rendering exist; UI and format limitations continue to evolve |
+| M6 Advanced tuning | Not started; pitch abstraction exists, but tuning-file import and exploration UI do not |
+| M7 Community | Not started |
 
-**MVP 验证结果**：`node --test "tests/*.test.mjs"` → 41 项全通过；
-`node tests/run-browser-check.mjs` → 12 项浏览器真机自检全通过。
-100 个随机种子中无一产生难听结果（`verdict !== 'poor'`），平均悦耳度 > 0.8。
+The current suite has 52 passing Node tests. The browser suite covers the actual Web Audio path. Automated musicality checks are heuristics and do not replace human listening studies.
 
----
+## M0 — Deterministic core (complete)
 
-## 开工前（半天）
+The core provides pitch and note-event models, seeded PRNG streams, deterministic generation, audio-clock scheduling, and adapters. Independent random streams prevent a change in one part from perturbing another. Future interface work should be validated with real musical examples; the number of registration hooks is intentionally not frozen.
 
-- [x] 确定主许可：**Apache-2.0** ✅（LICENSE + NOTICE 已就绪）
-- [ ] 内容数据独立仓库（待拍板）
-- [ ] 复核依赖许可证（`docs/archive/99-verification-notes.md` §5 有批量脚本；**必须读仓库 LICENSE 原文，不信 npm 元数据**）
-- [ ] 技术栈：TypeScript + Vite + pnpm workspaces
-- [ ] CI 许可证卡口（GPL/AGPL 即失败）
+## M1 — Listening quality (in progress)
 
----
+The generator uses interval weighting, register separation, harmony constraints, mix processing, multi-section form, and density envelopes. Remaining work includes a broader curated sound palette, listening-validated presets, statistical checks across many seeds, and blind listening studies. The target is sustained listening without unacceptable musical failures. The evaluator can also support future AI feedback, but must not be presented as an objective substitute for listeners.
 
-## M0 · 内核抽离 ✅ 已完成
+## M2 — Accessible play (complete)
 
-| 任务 | 验收 |
-|---|---|
-| `Pitch` 标签联合、`NoteEvent`、`Constraint` | 类型完备，无 `any` |
-| PRNG（mulberry32）+ 每声部 `splitmix32` 子流 | 同种子跨平台一致 |
-| 消灭裸 `Math.random()` | `grep` 为 0 |
-| 前瞻调度器（音频时钟驱动） | 无 `setTimeout` 参与发声 |
-| 扩展接口候选项梳理 | 用真实用例验证素材与生成代码的接口；暂不冻结 `register*` 数量 |
-| 算子声明 `lookback`/`lookahead` | 支撑增量重算 |
-| `prng.stateAt(t)` + 活动音符快照 | 可从任意 t 起步渲染 |
-| Tone.js 适配器 + 离线适配器 | 同种子实时/离线**逐样本一致** |
+Mood, energy, and tempo controls map to multiple internal parameters. Users can lock parts, reroll selected parts, mute parts, change scales, and share reproducible state. Continue preserving immediate feedback and beginner-friendly language.
 
-**验收**：① 同种子实时/离线逐样本一致；② **内核 <3000 行，新人半天读完**。
+## M2.5 — AI via MCP and Skills (planned)
 
----
+Build a closed Action protocol and keep proposal separate from application. Invalid actions must be rejected with valid alternatives. Planned tools include capability description, piece evaluation, previews, and deterministic edits. Skills can teach an AI how to recommend and combine trusted content. Add prompt-injection defenses and regression cases. AI must not modify the core or execute generated code; all changes use the same Action path as games and UI.
 
-## M1 · 好听 ★ 最高优先级 — 🟡 骨架已完成
+Acceptance examples: interpret "make it quieter" as a validated energy change; preserve musical constraints; and explain limits honestly when asked for an authentic tradition the system cannot represent.
 
-**为什么是独立里程碑**：这不是"某个功能"，而是**所有功能的前提**。
+## M3 — First game (planned)
 
-| 任务 | 验收 |
-|---|---|
-| **悦耳度评分 + 加权采样** | 候选音按音程悦耳度加权，非均匀随机 |
-| **声部音区隔离** | 低音<和声<旋律<打击，互不重叠 |
-| **和声约束** | 同时发声的音落在许可和声集合内 |
-| **音程权重表** | 纯五/三度优先，小二度≈0 |
-| **混音链** | 总线压缩/限制 + 每声部高通 + 频段分配 + 程序生成 IR 混响 |
-| **宏观结构** | 4 段式 + 密度曲线 + 声部进退场 |
-| **20 个内置预设，每个经人工试听确认** | 无难听预设 |
-| **自动化听感检查**（1000 种子统计难听事件） | 事件率低于阈值 |
-| 人工盲测 | 20 个随机片段均分达阈值 |
+Rhythm tapping is the proposed first game because it stress-tests the core's ability to accept timed input. The game should schedule input against audio time, expose state at a requested time, recompute incrementally where possible, and record/replay a complete input log. Avoid failure states: timing deviations can alter sound or pitch. A session should be exportable or shareable. Ideally, this form should not require core-specific patches.
 
-**验收**：**随便按"生成"，连续听 2 分钟不出难听片段。** 不过关不进 M2。
+## M4 — Content ecosystem (in progress)
 
-**产出复用**：这套评分器**直接就是 AI 层的 `evaluate_piece`**（见 M2.5）。
+The repository contains an early JSON validator and sample pack plus a reviewed TypeScript ESM ambient pack used at runtime. The target authoring workflow should support typed static assets and reviewed code generators, with JSON retained for validated interchange. Define provenance and license checks, exact pack versions, compatibility, contribution review, optional preset editing, and safe visualizer extensions. Do not load executable code from arbitrary URLs.
 
----
+## M5 — Export and sound sources (in progress)
 
-## M2 · 好玩：三旋钮 + 锁与重掷 ✅ 已完成
+Current exports include WAV, per-part stems, editable Standard MIDI, and a canonical Score format. Continue improving range selection, tails and fades, MIDI microtonal-loss reporting, and sound palette breadth. Possible future work includes MP3/Opus, AudioWorklet instruments, and sample-based instruments; assess licensing before adding dependencies.
 
-| 任务 | 验收 |
-|---|---|
-| **三旋钮**：情绪 / 能量 / 速度 | 非音乐人可懂，立刻听到变化 |
-| 三旋钮 → 多维参数的**降维投影映射** | 每个旋钮影响多个内部维度 |
-| **锁定与重掷** | "锁定节奏，换旋律" |
-| 全部操作 **<100ms 听觉反馈** | 无感知延迟 |
-| 分享码（种子+配置，带版本） | 打开链接可复现 |
-| 界面只用"人话" | 默认路径无 DSP 术语 |
-| 声部开关 | 逐声部试听 |
+## M6 — Advanced tuning (planned)
 
-**验收**：**零音乐知识的人，30 秒内做出一个自己愿意分享的片段。**
+Explore ratio, cents, equal-division, and measured tunings; import Scala `.scl`/`.kbm` files; add advanced tuning comparisons and honest provenance. Use a few well-sourced examples to validate the model. Do not market comprehensive coverage of world music systems.
 
----
+## M7 — Community (on demand)
 
-## M2.5 · AI 融合：MCP Server + Skill（3 周）★ 理念核心
+Possible work includes more games, piece storage and forking, attribution, contribution requests, terms for user-generated content, performance, SEO, and accessibility.
 
-**已定：只做 MCP Server / Skill，不内置对话界面。**
+## Sequencing
 
-| 任务 | 验收 |
-|---|---|
-| **Action 协议定型**（游戏与 AI 的共同底座） | 封闭动词集合，无代码执行 |
-| **`propose_actions` / `apply_actions` 分离** | 非法动作不写入作品；报错**列出可用替代值** |
-| **MCP Server（8 个工具）** | 可在任意 AI 客户端驱动平台 |
-| `describe_capabilities` 输出紧凑摘要 | 不吐全量 JSON |
-| 紧凑音乐 DSL（状态表示） | 人类可读、可 diff、token 便宜 |
-| **Skill 集合**（Markdown，社区可贡献） | 含 `genre-recipes`（社区主战场） |
-| **`evaluate_piece` 接入 M1 评分器** | AI 有客观自我修正依据 |
-| `render_preview` + 音频特征摘要 | 让 AI 间接"听"到结果 |
-| **提示注入防护** | 危险模式全部拒绝 |
-| **`local-helper` 规则式兜底** | 无 AI 时核心功能不失效 |
-| **AI 回归测试集** | `examples/ai_eval.py` 扩展，全绿 |
+Listening quality gates product expansion. M4 and M6 may proceed in parallel. M2.5 and M3 share the Action protocol but can be built independently. Game and AI acceptance may reveal missing abstractions in earlier layers; address those at the correct layer rather than adding form-specific core patches.
 
-**验收**：
-1. "太吵了"能被正确翻译成 `energy` 降低，且改完仍然好听
-2. **AI 层未修改内核任何代码**（与游戏一致，走 Action 通道）
-3. 面对"生成正宗甘美兰"，AI **诚实说明限制**而非假装做到
+## Implementation lessons
 
-**为何插在这里**：Action 协议是游戏与 AI 的共同底座；"好听"与 `evaluate_piece` 是 AI 自我修正的前提。
-
----
-
-## M3 · 第一个游戏：节奏点击（3 周）★ 验证多形态架构
-
-**双重目的**：提供"轻松玩"的入口 + **压力测试架构**（游戏与生成器需求差异最大）。
-
-| 任务 | 验收 |
-|---|---|
-| `Engine.schedule()` 实时输入队列 | 按键在目标音频时刻生效 |
-| `Engine.getState(atTime)` | 能显示当前节拍/和声状态 |
-| `Engine.recomputeFrom(t)` 增量重算 | 每次输入不重跑整首 |
-| 输入日志记录与回放 | 一局可完整重放 |
-| **不可能输**：判定偏差 → 变成另一种音色/音级 | 无失败状态，无中断 |
-| **产出可带走**：每局可导出/分享 | 玩家作品即内容 |
-| **★ 未修改内核任何一行代码** | 架构验收硬指标 |
-
----
-
-## M4 · 内容生态与贡献飞轮 — 🟡 旧版 JSON 样板与校验器已就绪
-
-| 任务 | 验收 |
-|---|---|
-| 定义基础素材类型与精简的生成接口 | 区分声部、乐器能力、声音实现和音色；一段生成代码可以联合表达旋律、节奏、装饰和奏法 |
-| `provenance` 元数据与校验 | 缺失出处、精确度、局限或许可时 CI 拒绝 |
-| JSON 兼容导入 / 导出及运行时校验 | 外部 JSON 可进入内容包流程，不要求以 JSON 作为权威源格式 |
-| 可选的浏览器内风格预设编辑器 | 用户可组合已信任的生成代码和基础素材并试听 |
-| 一键"提交到内容库"（自动生成 PR） | 类型检查、运行时校验与代码审核 |
-| 有版本的内容包加载 | 仅加载已信任、已构建并兼容的模块；不从任意 URL 执行代码 |
-| 可视化贡献模板 + 隔离执行 + 性能预算 | 第三方可视化不拖垮主页面 |
-| 多语言内容名 + 策展列表 | 默认只加载精选内容 |
-
-**验收**：社区可以贡献类型化静态素材，也可以用一段代码整体表达互相耦合的框架、节奏、装饰和奏法，并通过检查后在网站上试听。JSON 是兼容格式，不是唯一贡献格式。
-
----
-
-## M5 · 导出与音源扩展 — 🟡 导出引擎已就绪
-
-| 任务 | 验收 |
-|---|---|
-| 离线区间渲染导出（含 tail 与淡入淡出） | 选 [t1,t2] 导出无爆音 |
-| WAV（零依赖自研）→ MP3/Opus | 可播放、体积合理 |
-| MIDI 导出（12-TET；微分音降级 + 附 `.scl`） | 明确告知损失 |
-| 音效配方库（声明式，20+） | 可编辑/导出 |
-| AudioWorklet 物理建模（Karplus-Strong 起步） | 拨弦音色可用 |
-| `smplr` 采样乐器接入 | — |
-
----
-
-## M6 · 深度模式：律制与框架（4–6 周）
-
-**定位**：**架构能力**与高级模式的探索功能，**不是首期卖点**。
-
-| 任务 | 验收 |
-|---|---|
-| `sonic-weave` 接入，`Pitch` ↔ 频率 | ratio/cents/edo/measured |
-| `.scl` / `.kbm` 解析 | 可导入标准音阶文件 |
-| 律制家族预设（毕达哥拉斯/纯律/中庸律/n-EDO/五声七声） | 高级模式可切换 |
-| 代码生成器 + 少量传统音乐样例 | 展示相关规则可整体实现；`framework` / `rhythm` 等术语不强制成为独立类型 |
-| 音分偏差可视化 | 高级模式内的"探索"功能 |
-| 每个体系的诚实标注 | 数据来自 `provenance` |
-
-> **措辞原则**：说"试试不同的调音"，不说"我们支持 3000 种世界音乐体系"。
-
----
-
-## M7 · 更多形态与社区化（按需）
-
-- [ ] 更多游戏（音阶小径 / 色彩配对 / 氛围涂鸦 / 调音侦探）
-- [ ] 后端：作品存储 / fork / 评论
-- [ ] 署名体系与内容使用量统计
-- [ ] `good-first-contribution` 内容请求列表
-- [ ] 服务条款（UGC 授权、算法生成内容归属）
-- [ ] 性能、SEO、无障碍
-
----
-
-## 依赖与并行度
-
-```
-M0 ──▶ M1 ──▶ M2 ──▶ M2.5 ──▶ M3 ──▶ M4 ──▶ M5
-内核   好听   好玩    AI      游戏   生态   导出
-                              │
-                              └──▶ M6（深度模式，可与 M4/M5 并行）
-                                          └──▶ M7（社区化）
-```
-
-- **M0 是不可并行的关键路径**：扩展点接口定错，后面全部返工
-- **M4 与 M6 可并行**
-- **M2.5 与 M3 可并行**（共享 Action 协议，但可两人分别做）
-- **M3/M2.5 的验收可能倒逼修改 M0–M2 的抽象**——这正是把它们排在早期的原因
-
-
----
-
-## 附：MVP 实现记录（真实发现）
-
-实现过程中被测试抓出的问题，值得留档：
-
-| 问题 | 是怎么发现的 | 结论 |
-|---|---|---|
-| `generate()` 的 `scales` 参数无默认值 | Node 测试直接抛 `Cannot read properties of undefined` | 已修；说明"参数必须有默认值"这类事情测试能立刻抓住 |
-| `moodFactors.octaveShift` 算了但从未被使用 | 「情绪影响音高分布」测试失败（dark 与 bright 平均值完全相同） | 已接入旋律加权。**这类"写了但没接线"的缺陷人眼极难发现** |
-| `prepareEvents` 把跨起点的长音算两次 | 通读代码时发现，并补了回归测试 | 已修。区间导出会因此产生重复音 |
-| 混响 IR 与打击底噪用了 `Math.random()` | 浏览器自检的确定性断言 | **最重要的一条**：两次渲染最大样本差 0.507。改为种子派生后降到 ~6e-7（float32 机器精度）。这直接决定"导出可复现"是否成立 |
-| `app.mjs` 在 async 函数外 `await` | `node --check` 语法检查 | 已修；说明 UI 层也应纳入语法检查 |
-| 声部卡片文字溢出 | 看截图 | 已修。视觉问题只能靠看 |
-
-**教训**：
-1. **"写了但没接线"是最隐蔽的一类 bug** —— 需要针对"参数真的生效了吗"写测试，而不只是测"不报错"
-2. **确定性必须包括噪声** —— 只保证音高/节奏确定是不够的，混响与噪声同样会让导出不可复现
-3. **截图检查不可省** —— 布局与可读性问题测试抓不到
+Previous checks found missing defaults, a computed-but-unused mood parameter, duplicate events crossing range boundaries, nondeterministic reverb/noise, a syntax error in async UI code, and text overflow. Regression tests should verify that parameters actually affect output, deterministic guarantees include noise, and screenshot review covers layout issues tests cannot observe.

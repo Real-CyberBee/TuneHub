@@ -1,73 +1,27 @@
-# TuneHub 声音的秩序
+# TuneHub Documentation
 
-> 开源的、浏览器优先的**音乐生成平台**。
-> 让不懂音乐的人也能玩音乐；让懂音乐的人能玩得更深；让所有人都能往里添砖加瓦。
+TuneHub is an open-source, browser-first ambient electronic music studio. This directory contains the product overview, architecture, roadmap, content-pack format, and scene-design research.
 
----
+## Start here
 
-## 命门
+- [Project README](../README.md): run the app, use the current features, and run verification.
+- [Overview](OVERVIEW.md): product goals, interaction model, AI integration, and content philosophy.
+- [Architecture](ARCHITECTURE.md): core model, content packs, actions, and technical boundaries.
+- [Roadmap](ROADMAP.md): milestones, current status, and acceptance criteria.
+- [Ambient architecture](AMBIENT_ARCHITECTURE.md): the scene-based ambient electronic music implementation.
+- [Content packs](CONTENT_PACKS.md): pack metadata, validation, and portable score exports.
+- [Scene sound-design research](AMBIENT_SCENE_SOUND_DESIGN_RESEARCH.md): evidence-informed scene profiles and listening guidance.
+- [Examples and contribution guide](../examples/README.md): legacy JSON examples and content contribution workflow.
 
-> **点一下好不好听；玩一下有没有意思。**
+Chinese translations are maintained separately under [`docs/zh-CN/`](zh-CN/). Historical research notes remain in [`docs/archive/`](archive/); Chinese source copies are also available under [`docs/zh-CN/archive/`](zh-CN/archive/).
 
-用户不关心你支持多少种律制。**体系兼容的广度是架构的容错性，听感与交互才是产品的命门。**
+## Current status
 
-## 三层目标
+The MVP includes deterministic generation, browser playback, scene-based ambient electronic music, endless playback, and WAV, stems, MIDI, and Score exports. AI/MCP integration, the first game, and the broader community content workflow are not yet implemented. See the roadmap for details.
 
-1. **好听好玩** —— 零音乐知识的人，点几下或玩一局，就得到有趣的、动听的音乐 ← **第一优先级**
-2. **可贡献** —— 静态素材用类型化常量；相互耦合的音乐行为可由一个代码模块整体表达
-3. **多形态** —— 随机生成器只是其中一种玩法；游戏、AI、教学都是同一内核的消费者
-
-## 四条主线
-
-| 主线 | 一句话 |
-|---|---|
-| **内核薄而深** | <3000 行、零运行时依赖、确定性、可序列化。新人半天能读完 |
-| **内容可扩展** | 静态素材用类型化常量，动态音乐行为可写代码；JSON 作为互操作格式 |
-| **一切走 Action 通道** | 游戏与 AI **平级**，都只提议动作，不直接改乐谱 → 天然可复现、可撤销、可审计 |
-| **好听是独立工程** | 在"好听的子空间"里随机 + 人工验证的预设 + 混音链，不是顺带能有的结果 |
-
-## AI 融合（已定：只做 MCP Server / Skill，不内置对话）
-
-用户在自己习惯的 AI 客户端里说"帮我做一段雨夜氛围电子音乐"，AI 调用我们的 MCP 工具完成。
-
-```
-人话 ┐
-游戏 ┤→ Action 协议 → 输入日志 → 确定性内核 → 音频
-AI  ┘
-```
-
-> **三旋钮消除了"懂乐理"的门槛；AI 消除了"我得先知道拧哪个旋钮"的门槛。**
-
-三个必须做对的细节：`propose_actions` 与 `apply_actions` 分离（让 AI 能借报错自我修正）、`evaluate_piece` 是 AI 唯一的客观反馈源（**模型听不见**）、MCP 给"手"而 Skill 给"脑"。
-
-## 目录
-
-```
-├── docs/
-│   ├── OVERVIEW.md          概览：原则、AI 融合、竞品、"内容"定义、不做清单
-│   ├── ARCHITECTURE.md      架构：分层、数据模型、扩展点、Action 协议、选型
-│   ├── ROADMAP.md           M0–M7 任务与验收标准
-│   └── archive/             早期调研全文（12 份、150KB）
-├── examples/
-│   ├── validate.py          内容包校验器（可运行）
-│   ├── ai_eval.py           AI 层回归测试集（可运行）
-│   ├── content-pack/        早期 JSON 兼容样板（6 种 kind）
-│   └── README.md            贡献指南
-└── prototype/
-    └── original-demo.html   起点 demo（归档，只读）
-```
-
-## 上手
+## Local checks
 
 ```bash
-python3 examples/validate.py examples/content-pack   # 当前 JSON 兼容样板校验
-python3 examples/ai_eval.py                          # AI 层回归测试（14 用例）
+node --test 'tests/*.test.mjs'
+python3 examples/validate.py examples/content-pack
 ```
-
-## 状态
-
-MVP 内核代码已完成。内容生态仍未接入运行时；M4 目标作者格式为类型化 TypeScript 内容包，JSON 保留为兼容导入 / 导出格式。下一步见 `docs/ROADMAP.md`。
-
-> **排期铁律**：**M1（好听）不过关就不要做 M2。**
-
-**待拍板**：主许可（建议 Apache-2.0）｜内容是否独立仓库（建议独立）｜第一个游戏形态（建议节奏点击）

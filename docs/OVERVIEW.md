@@ -1,226 +1,85 @@
-# TuneHub · 概览
+# TuneHub Overview
 
-> 开源的、浏览器优先的**音乐生成平台**。
-> 让不懂音乐的人也能玩音乐；让懂音乐的人能玩得更深；让所有人都能往里添砖加瓦。
+TuneHub is an open-source, browser-first music generation platform. It aims to make music creation approachable for beginners while giving musicians and contributors room to explore deeper ideas.
 
----
+## 1. Product
 
-## 1. 这是什么
+TuneHub began as a small demo that triggered random notes across four parts. Its central idea remains: **music can be created by shaping randomness with useful constraints**. The demo is a starting point, not a product template. Product success depends first on two questions: does it sound good, and is it fun to use?
 
-从一个小 demo 起步——497 行 HTML，四个声部随机触发音符，一个按钮在「原始模式」和「音乐化模式」（五声音阶量化 + 时间网格 + 声部限流）之间切换。
+The goals, in order, are:
 
-它的核心论点：
+1. **Enjoyable and playful:** people with no music knowledge can create or play music immediately.
+2. **Contributable:** static material can be expressed as typed constants; coupled musical behavior can be implemented in code.
+3. **Multi-form:** games, AI clients, and teaching tools can consume the same deterministic core.
 
-> **音乐 = 对随机性的约束。**
+## 2. Priorities
 
-那个 demo 只是**起点，不是范本**。TuneHub 要做的是把它扩展成一个平台，同时守住一条清醒的认识：
+1. Listening quality: music must be worth continuing to hear.
+2. Interaction: zero setup and immediate feedback.
+3. Play: approachable games and natural-language interfaces.
+4. Generator breadth.
+5. Compatibility with musical systems such as tunings and traditions. This is an architectural capability, not a marketing claim.
 
-> ## 产品的命门只有两件事
-> **点一下好不好听；玩一下有没有意思。**
+## 3. Design principles
 
-三层目标：
+- Treat listening quality as an engineering problem: weighted generation, a mix chain, and listening validation.
+- Keep beginner controls human-readable: mood, energy, tempo, lock, and reroll. Advanced parameters can remain available deeper in the interface.
+- AI is a language interface, not a black-box composer. It proposes actions and never edits the score directly.
+- Keep the core stable. Choose typed data or code according to the content being expressed; JSON is an interchange format, not the required source format.
+- Make randomness reproducible. A piece is determined by its seed, configuration, and input log.
+- Compose constraints as reusable operators rather than scattered special cases.
+- Support musical systems in the architecture without claiming comprehensive cultural representation. State approximations and limitations explicitly.
 
-1. **好听好玩** —— 零音乐知识的人，点几下或玩一局，就得到有趣的、动听的音乐 ← **第一优先级**
-2. **可贡献** —— 静态素材可用类型化常量表达；音乐行为可用代码整体表达，允许旋律、节奏、装饰和奏法耦合
-3. **多形态** —— 随机生成器只是其中一种玩法；游戏、AI、教学都是同一内核的消费者
+## 4. Interaction ladder
 
----
+TuneHub is a gradual path rather than a split between "simple" and "professional" modes:
 
-## 2. 优先级（决定一切排期）
-
-```
-① 听感 —— 好听到能听下去        ★ 命门。不好听，其他全部白费
-② 交互 —— 零门槛、即时反馈
-③ 玩法 —— 轻松的游戏形式 + 自然语言
-④ 生成算法丰富度
-⑤ 体系兼容广度（律制/框架）      ★ 架构容错性，不是卖点
-```
-
-> **⑤ 是"能力"，不是"卖点"。** 用户不需要知道背后支持多少种律制。
-> 界面上说"试试不同的调音"，而不是"我们支持 3000 种世界音乐体系"。
-
----
-
-## 3. 设计原则
-
-1. **听感优先于一切。** "好听"是独立的工程问题（悦耳度加权采样、混音链、人工验证的预设），不是"顺带能有"的结果。
-2. **零门槛路径上只出现人话。** 用户看到「情绪 / 能量 / 速度」和「锁定·重掷」，不是 `filter cutoff` 和 `density`。参数是底层多维参数的**降维投影**。
-3. **AI 是语言接口，不是黑盒生成器。** AI **永远不直接改乐谱，只提议动作**。见 §5。
-4. **内核提供稳定机制，贡献者按问题选择表达方式。** 静态内容优先用 TypeScript 类型约束的常量；遇到动态行为时允许写代码。JSON 可作为交换格式，不强制作为唯一源格式。
-5. **一切随机都必须可播种，用户的输入也是确定性输入。**
-   `作品 = (种子, 配置, 输入日志)`。这让游戏可回放、作品可分享、AI 操作可撤销。
-6. **约束是可组合的算子，不是硬编码的 if。**
-7. **体系兼容性做在架构里，不做在营销里。** 律制和音阶可作为基础资源；生成器可以联合处理旋律、节奏、装饰与奏法，不要求这些维度彼此独立。
-8. **不许愿。** 呼麦是人声的泛音选择，不是音阶；甘美兰每套合奏调音都不同。做不到的就写明"只能近似、为什么"。
-
----
-
-## 4. 三层交互阶梯
-
-不用"简单/专业模式"二分（那是堵墙），而是一条连续斜坡：
-
-```
-第 0 级  按一下播放          → 直接出好听的音乐
-第 1 级  三颗旋钮            → 情绪 / 能量 / 速度
-第 2 级  锁定 · 重掷          → "锁定节奏，换一个旋律"  ★ 零门槛下最强创造感
-第 3 级  声部开关            → 逐层叠加
-第 4 级  参数显形            → 看到真实参数名
-第 5 级  深度探索            → 律制 / 框架 / 算子管道 / DSP
-```
-
-两种玩法形态与三旋钮**平级**，各自服务不同人群：
-
-| 形态 | 用户必须知道的 | 门槛 |
-|---|---|---|
-| 三旋钮 / 游戏 | 要拧哪个旋钮 | 低 |
-| **自然语言（AI）** | **只需要说想要什么** | **接近零** |
-
-> **三旋钮消除了"懂乐理"的门槛；AI 消除了"我得先知道拧哪个旋钮"的门槛。**
-
----
-
-## 5. AI 融合（已定：只做 MCP Server / Skill，不内置对话）
-
-用户在**自己习惯的 AI 客户端**里说"帮我做一段雨夜氛围电子音乐"，AI 调用我们的 MCP 工具完成。
-**不自建对话界面**——成本更低，且不承担模型调用成本与隐私责任。
-
-### 5.1 核心决定：AI 走游戏走的那条同一条通道
-
-```
-人话 ┐
-游戏 ┤→ Action 协议 → 输入日志 → 确定性内核 → 音频
-AI  ┘
-```
-
-**AI 永远不直接改乐谱，只提议动作。** 这一条一次性解决五个问题：
-
-| 问题 | 为什么自动解决 |
+| Level | Interaction |
 |---|---|
-| AI 会不会破坏可复现 | 不会。AI 只提议 Action，内核仍确定性 |
-| AI 出错怎么办 | 输入日志逐条可撤销，用户能看见 AI 做了什么 |
-| 能否审计 | 日志即审计 |
-| 换模型/换厂商 | Action 协议与模型无关 |
-| AI 会不会写坏代码 | **绝不执行模型给的代码**，只执行协议内的声明式动作 |
+| 0 | Press play and hear music. |
+| 1 | Adjust mood, energy, and tempo. |
+| 2 | Lock one part and reroll another. |
+| 3 | Mute or layer parts. |
+| 4 | Inspect detailed parameters. |
+| 5 | Explore tunings, generators, operator chains, and DSP. |
 
-### 5.2 三个必须做对的细节
+Games and natural language are parallel interaction forms. The controls remove the need to know music theory; AI can remove the need to know which control to use.
 
-1. **`propose_actions` 与 `apply_actions` 分开。** 模型先提议、拿到校验、自行修正，非法状态永不写入作品。
-   报错**必须给出可用替代值**：`style 'e-piano' 不存在。可用：sub-bass(超低音), pluck(拨弦), e-piano-fm(电钢)`
-2. **`evaluate_piece` 是 AI 唯一的客观反馈源。** **模型听不见**，无法判断自己做的音乐好不好听——必须给它可验证的数值（复用"好听"那个里程碑的悦耳度评分器）。
-3. **MCP 给"手"，Skill 给"脑"。** 工具提供能力，Skill（人写的 Markdown）提供判断。
-   → `tunehub-genre-recipes` 是一种独立贡献形式：用 Markdown 教 AI 如何推荐和组合音乐行为；它不替代运行时的代码扩展。
+## 5. AI integration
 
-### 5.3 安全与兜底
+The product direction is an MCP server and Skill, with no built-in chat interface. The user can ask an AI client to make a piece; the AI invokes TuneHub tools.
 
-**MCP 工具集是封闭的声明式动词集合，不是通用执行环境。** 严禁暴露 `eval_code` / 任意网络访问 / 删库类操作。
+```text
+Natural language ─┐
+Game input ────────┼─> Action protocol -> input log -> deterministic core -> audio
+AI proposal ──────┘
+```
 
-**没有 AI 也必须可用**：三旋钮 + 游戏 + 内核 + 离线渲染全部本地。AI 层是**可选依赖**——某个厂商政策变了，产品不会死。
+AI never edits notes directly. This keeps results reproducible, makes actions reviewable and reversible, and avoids executing model-generated code. `propose_actions` and `apply_actions` should be separate: validate proposals and report usable alternatives before applying them. `evaluate_piece` provides objective metrics because a language model cannot hear the output. MCP provides tools; human-authored Skills provide recommendations.
 
----
+The tool set must be a closed set of declarative actions, never a general-purpose execution environment. The local experience must remain useful without AI.
 
-## 6. 同类平台：我们剩什么空间
+## 6. Product space
 
-| 能力 | 现状 |
-|---|---|
-| WebAudio 音效合成 | ✅ 已充分解决 |
-| 随机音乐生成 | ✅ **已饱和**——遍地都是 |
-| 多种律制可玩 | ⚠️ 有，但停在"工具"层 |
-| 框架层（拉格 `pakad`、木卡姆 `seyir`）建模 | ⚠️ 只有个别体系，无通用平台 |
-| 丰富的可视化 | ⚠️ 各自散落 |
-| **社区可贡献内容** | ❌ **基本空白** |
+Web Audio synthesis and random music generators are common. TuneHub's intended distinction is that users can hear differences across musical systems, contributors can choose data or code, and games and AI are first-class consumers of the core. Prior art such as generative.fm also highlights the need to review code contributions and define execution boundaries.
 
-**最该研究的先例：**
+## 7. Content model
 
-- **generative.fm** —— 形态最像，但它**明确拒绝外部 PR**，理由是"想要绝对控制权"+"**集成他人代码是安全风险**"。
-  → 说明代码贡献要配套审核与执行边界；这不要求把音乐行为压成静态数据。
-- **Scale Workshop** —— 律制领域的事实标准工具，其语言内核就是我们要用的 `sonic-weave`。
-  → **不是竞争对手而是上游**：它的音阶可以成为我们的内容来源。
-- **Apotome & Leimma**（Khyam Allami） —— 理念最接近的先行者（把非 12-TET 体系变成可玩工具）。
-  → **是可以用力引用的同路人**，能提升项目可信度。
+The core provides stable mechanisms; content packs provide reusable musical material, rules, and metadata. Packs can include static definitions, code generators, and optional presets. A generator may coordinate melody, rhythm, ornamentation, and playing technique when those dimensions affect one another.
 
-**我们不可替代的三点**：
-1. **能听见差异** —— 同旋律跨律制 A/B + 音分偏差可视化（高级模式）
-2. **能按能力选择贡献方式** —— 类型化常量、扩展代码或 Markdown Skill
-3. **能玩而不只是调参** —— 游戏与 AI 是内核一等消费者
+Use typed constants for stable definitions such as tunings, scales, measurements, instrument capabilities, and timbre parameters. Use code when behavior needs coordinated decisions. A part is an arrangement role; an instrument describes capabilities and sound implementation; a timbre selects a particular sound. Split reusable patterns into separate assets only when reuse is clear. Every item needs provenance, accuracy, limitations, and license metadata. Imported JSON requires runtime validation, and executable extensions require review and isolation.
 
----
+The current `PATCHES` table contains synthesis recipes, not complete instrument definitions. Voice/part and timbre selection are still coupled in parts of the MVP.
 
-## 7. "内容"具体指什么
+## 8. Out of scope
 
-**内核提供稳定机制，内容包提供音乐素材和生成规则。**
+- Built-in AI chat interface (MCP server and Skill only).
+- Real-time multi-user collaboration.
+- ML music-generation models.
+- Marketing claims based on broad world-music coverage.
+- Generators that reduce oral traditions to scales.
+- A full DAW or non-12-TET staff notation.
 
-| | 机制与算法 | 内容包 |
-|---|---|---|
-| 是什么 | 内核规则、生成算法与音频处理 | 可复用的音乐素材、规则与元数据；可以是静态常量，也可以包含行为代码 |
-| 回答 | "**如何运行**"——怎么算频率、怎么调度、怎么渲染 | "**用什么以及如何使用**"——用哪个调音、哪条节奏、怎样按特定传统组织旋律 |
-| 例子 | 确定性 PRNG、音频调度器 | `9/8` 音程常量，或根据旋律方向选择音级的函数 |
+## 9. Decisions and references
 
-**内容包不要求固定的音乐学分类。** 可以包含基础素材、代码生成器，也可以包含可选的风格预设：
-
-| 内容形态 | 作用 | 例子 |
-|---|---|---|
-| 基础定义 | 可单独复用的静态资源 | 律制、音阶、乐器能力、音色配方、视觉主题 |
-| 框架 / 节奏 / 奏法 | 既有音乐概念；可由代码生成器共同表达，不强制分别注册 | 一个生成器同时决定传统旋律走向、节奏落点、装饰音与奏法 |
-| 风格预设（可选） | 给用户一个可选择的组合入口；可引用素材和代码生成器 | Afrobeat 预设选择声部、乐器、音色、速度、段落和生成器 |
-
-**表达方式按内容选择**：
-- 律制、音阶、测量值、乐器能力、音色参数等稳定定义，适合用 TypeScript 类型约束的常量表达；例如 `as const satisfies ScaleDefinition`。
-- 旋律、节奏、装饰和奏法需要互相影响时，由同一个代码生成器共同处理；实现内部可以自行拆分函数和数据，不被外部分类限制。
-- 声部是编曲角色，乐器描述可演奏能力并关联声音实现，音色是声音实现的具体选择；风格预设可以把声部分配给乐器并选择音色。
-- 可复用的节奏型或旋律片段可以独立成素材，但只有存在明确复用需求时才拆出。
-- 风格预设是可选的组合入口，不等同于全部音乐知识，也不是生成器必须经过的一层。
-- JSON 可用于导入导出和跨语言交换，但不是唯一的权威源格式。
-- TypeScript 类型只在编译期约束作者；外部导入的 JSON 仍需运行时校验。出处、精确度、局限和许可仍需作为可检查的元数据。
-
-代码扩展能表达更丰富的音乐行为，也带来审核、依赖、版本兼容和运行隔离的要求。内容包代码应通过稳定的内核接口调用，避免隐式全局状态；生成行为接收可播种的随机源，才能保持作品可复现。未经信任的第三方代码不能仅因“内容包”身份而自动执行。
-
-当前 MVP 的 `PATCHES` 是合成音色配方，不是完整的乐器定义；`voice` 主要表示声部，音色选择尚未与声部彻底分开。乐器能力与发声实现的关系仍是后续设计方向。
-
-### 为什么"内容"值得单列为一层
-
-因为它是**社区贡献的主战场**，也是项目能否转起来的分水岭：
-
-- 一个懂甘美兰的人可以贡献律制或音阶；熟悉某种传统的音乐家可以和 AI 一起实现代码生成器，不需要修改内核或 UI
-- 内容包可独立于内核发布；静态素材可逐条声明内容许可，可执行模块需声明软件许可并经过依赖与许可证检查
-- 内容**带出处**（`provenance` 必填）：无出处的音阶进不了库
-
-> `docs/archive/06-prior-art-and-competitors.md` 记录了 generative.fm 对外部代码集成风险的顾虑。TuneHub 通过稳定扩展接口、代码审查与确定性约束来管理这类风险；静态素材和代码生成器都是可选的贡献路径。
-
----
-
-## 8. 明确不做
-
-- ❌ 内置 AI 对话界面（只做 MCP Server / Skill）
-- ❌ 多用户**实时**协作（异步可做）
-- ❌ ML 音乐生成模型（与"听感优先"和"调音多样性"两个目标都不契合）
-- ❌ 把"世界音乐覆盖广度"作为**营销主张**
-- ❌ 口传传统的"生成器"（呼麦、喉音、原住民音乐不做音阶化）
-- ❌ 做 DAW
-- ❌ 非 12-TET 的五线谱记谱
-
----
-
-## 9. 待拍板
-
-1. **项目主许可**：已确定 **Apache-2.0**
-2. **内容数据是否独立仓库**：建议**独立**（许可与发版节奏不同）
-3. **第一个游戏形态**：建议**节奏点击**（与生成器需求差异最大，最能验证架构）
-
----
-
-## 10. 详细资料
-
-精简后的主线是 `README.md` / `概览` / `ARCHITECTURE.md` / `ROADMAP.md`。
-早期调研的全部细节（引擎选型、世界音乐数据源、许可证矩阵、竞品逐项分析、DSL 完整规范）保留在 **`docs/archive/`**，需要时查阅：
-
-| 归档文档 | 内容 |
-|---|---|
-| `00-MASTER-DEBRIEF.md` | 六项需求的逐项落地方案、分期路线图原始版 |
-| `01-engines-generative.md` | 音频/生成引擎生态选型 |
-| `02-tuning-and-world-music.md` | 律制三层抽象、10 个家族、世界音乐数据源与伦理边界 |
-| `03-synthesis-viz-export.md` | 音效合成配方、可视化范式、离线渲染与区间导出 |
-| `04-licensing.md` | 许可证矩阵与 CI 卡口 |
-| `06-prior-art-and-competitors.md` | 竞品逐项分析 |
-| `09-ai-integration.md` | AI 融合完整设计（工具清单、评测、隐私） |
-| `10-music-dsl-and-skill-spec.md` | Action 协议与 Skill 格式完整规范 |
-| `99-verification-notes.md` | 来源与置信度（哪些核实过、哪些待复核） |
+Apache-2.0 is the project license. A separate content repository is recommended because content licensing and release cadence differ from code. Rhythm tapping is the proposed first game. See [Architecture](ARCHITECTURE.md), [Roadmap](ROADMAP.md), and the historical research notes in `archive/`.

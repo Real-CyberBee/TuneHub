@@ -1,24 +1,27 @@
-# TuneHub 音乐内容
+# TuneHub Musical Content Glossary
 
-本文记录 TuneHub 对律制、音阶、框架、节奏、声部、乐器、音色和风格的用语。它们描述不同音乐问题，但不要求对应彼此独立的代码接口。
+This glossary defines how TuneHub uses the terms tuning, scale, framework, rhythm, part, instrument, timbre, and style. These terms describe different musical questions; they do not require one-to-one or independent code interfaces.
 
-## 音乐术语
+## Terms
 
-**律制**：描述音高如何映射为频率的体系，例如等分、比例或实测调音。
+**Tuning:** A system that maps pitches to frequencies, such as equal divisions, ratios, or measured tuning.
 
-**音阶**：从某种音高体系中选出的可用音高集合。
+**Scale:** A selected collection of pitches available within a tuning.
 
-**框架**：描述音高如何用于旋律和乐句的音乐规则，例如上行、下行、重点音和特征乐句。
+**Framework:** Musical rules for using pitches in melodies and phrases, such as ascending or descending movement, emphasis, and characteristic phrases.
 
-**节奏**：描述声音在时间中的组织方式，例如拍点、循环和重音。
+**Rhythm:** The organization of sounds in time, including beats, cycles, and accents.
 
-**声部**：编曲中的一条音乐线或角色，例如低音、旋律或打击乐。
+**Part:** A musical line or arrangement role, such as bass, melody, or percussion.
 
-**乐器**：一个可演奏的对象，包含或关联其演奏能力与发声实现；声部可以分配给乐器。
-_避免_：把乐器等同于声部或音色
+**Instrument:** A playable entity that has or references performance capabilities and a sound implementation. A part can be assigned to an instrument.
 
-**音色**：乐器或声音实现所使用的音质选择或配方；一件乐器可有多种音色。
-_避免_：把音色配方当作完整乐器定义
+Avoid treating an instrument as synonymous with a part or a timbre.
 
-**风格预设**：供用户选择的组合方案，可绑定默认速度、生成代码、声部与乐器分配、音色及其他参数。框架、节奏、装饰和奏法可能互相耦合，生成代码可以将它们放在一起实现。
-_避免_：把风格预设当作所有音乐规则的唯一容器，或要求相关概念必须拆成彼此独立的扩展接口
+**Timbre:** A sound choice or recipe used by an instrument or sound implementation. One instrument can have multiple timbres.
+
+Avoid treating a timbre recipe as a complete instrument definition.
+
+**Style preset:** An optional user-facing combination that may bind a default tempo, generator code, part-to-instrument assignments, timbres, and other parameters. Framework, rhythm, ornamentation, and technique may be coupled and can be implemented together in generator code.
+
+Avoid treating a style preset as the only container for all musical rules, or requiring related concepts to be split into independent extension interfaces.
