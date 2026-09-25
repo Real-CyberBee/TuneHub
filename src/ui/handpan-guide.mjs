@@ -3,6 +3,7 @@
 
 import { buildMasterBus, midiToHz, playNoteOn } from "../audio/engine.mjs";
 import { getLocale, setLocale, t, toggleLocale } from "./i18n.mjs";
+import { initPwa, refreshInstallButton } from "./pwa.mjs";
 
 const notes = [
   { midi: 50, label: "D3 Ding", timbre: "handpanBass" },
@@ -73,6 +74,7 @@ function applyLocale(locale = getLocale()) {
   language.textContent = t("language");
   language.title = t("languageTitle");
   setStatus(t("guideReady"));
+  refreshInstallButton();
 }
 
 function selectNote(midi) {
@@ -244,6 +246,7 @@ canvas.addEventListener("keydown", (event) => {
   }
 });
 window.addEventListener("resize", resize);
+initPwa();
 applyLocale();
 resize();
 draw();

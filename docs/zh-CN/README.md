@@ -16,6 +16,30 @@ python3 serve.py
 
 然后在浏览器中打开 <http://127.0.0.1:8765/>。项目需要通过本地服务器加载 JavaScript 模块，无需安装依赖或构建。
 
+## 装成应用（PWA）
+
+TuneHub 是一个渐进式 Web 应用：可以安装到桌面/主屏，可以离线打开，也能在息屏后继续播放。
+
+- **Android / 桌面 Chrome、Edge**：打开站点，点右下角的 **⬇ 安装应用**，或地址栏里的安装图标。
+- **iOS Safari**：分享 → **添加到主屏幕**。
+
+装好之后它没有浏览器地址栏，Service Worker 会把整个工作室（页面、模块、样式、图标）预缓存下来，断网也能打开并播放。
+
+### 息屏继续播放
+
+播放链路是按"扛得住锁屏"来设计的：
+
+- 一条循环的**静音保活音轨**让浏览器的音频会话一直活着；**Media Session API** 把当前作品交给锁屏、通知栏、耳机线控与键盘媒体键——播放、暂停、停止、拖动进度都会回接到播放器。
+- 页面转入后台时，调度前瞻从 0.65 秒自动放大到 25 秒，所以即使移动端把定时器节流，音乐也不会断。无尽模式的续写走同一个定时器，而不是后台会被暂停的 `requestAnimationFrame`。
+
+平台差异（诚实交代）：Android 上息屏、切到别的 App 都能继续播放；iOS 上锁屏后 Web Audio 能活多久由 Safari 决定——上面的音频会话能明显提高存活率，回到前台也会自动恢复 AudioContext，但长时间锁屏仍可能被挂起。这是系统限制，不是 TuneHub 的开关。
+
+## 部署自己的副本
+
+TuneHub 是纯静态站点，任何静态托管都能用。维护者把它放在腾讯云 COS + CDN 上，线上地址 <https://music.cyberbee.top>；脚本与步骤见 [`deploy/README.md`](../../deploy/README.md)。
+
+密钥永远不入库：部署凭据放在 `deploy/.env.deploy.local`，已被 `.gitignore` 排除，从 [`deploy/.env.deploy.example`](../../deploy/.env.deploy.example) 复制即可。
+
 <details>
 <summary>一段告白</summary>
 

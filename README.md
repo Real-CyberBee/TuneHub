@@ -16,6 +16,30 @@ python3 serve.py
 
 Then open <http://127.0.0.1:8765/> in your browser. TuneHub needs a local server to load its JavaScript modules; there is no build or install step.
 
+## Install it as an app (PWA)
+
+TuneHub is a progressive web app: it can be installed, it works offline, and it keeps playing with the screen off.
+
+- **Android / desktop Chrome or Edge**: open the site and use the **⬇ Install app** button, or the install icon in the address bar.
+- **iOS Safari**: Share → **Add to Home Screen**.
+
+An installed TuneHub launches without browser chrome and precaches the whole studio (pages, modules, styles, icons) through a service worker, so it still opens and plays with no network.
+
+### Playback with the screen off
+
+Playback is built to survive a locked screen:
+
+- A looping silent track keeps the browser's audio session alive, and the **Media Session API** publishes the current piece to the lock screen, notification shade, headset buttons and keyboard media keys. Play, pause, stop and seek all route back into the player.
+- When the page is hidden, the scheduler widens its lookahead from 0.65 s to 25 s, so a throttled background timer cannot punch holes in the music. Endless mode composes its next segment from that same timer rather than `requestAnimationFrame`, which browsers stop running in the background.
+
+Platform reality check: on Android the music keeps playing with the screen off and the app in the background. On iOS, Safari decides how long Web Audio survives a locked screen — the audio session above markedly improves it, and the context resumes automatically when you return, but a long lock can still suspend it. That is a platform limit, not a TuneHub setting.
+
+## Deploy your own copy
+
+TuneHub is a static site: any static host works. The maintainers run it at <https://music.cyberbee.top> on Tencent COS behind Tencent CDN; see [`deploy/README.md`](deploy/README.md) for the scripts.
+
+Secrets are never committed. Deployment credentials live in `deploy/.env.deploy.local`, which `.gitignore` excludes — start from [`deploy/.env.deploy.example`](deploy/.env.deploy.example).
+
 <details>
 <summary>Why I made TuneHub</summary>
 

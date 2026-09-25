@@ -13,9 +13,16 @@ TuneHub 本地静态服务器。
 """
 
 import http.server
+import mimetypes
 import socketserver
 import sys
 import os
+
+# PWA 相关类型：Python 的默认 mimetypes 表里没有 .webmanifest。
+# Content-Type 不对的话，浏览器会忽略 manifest，安装提示就不会出现。
+mimetypes.add_type("application/manifest+json", ".webmanifest")
+mimetypes.add_type("text/javascript", ".mjs")
+mimetypes.add_type("text/javascript", ".js")
 
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8765
 ROOT = os.path.dirname(os.path.abspath(__file__))

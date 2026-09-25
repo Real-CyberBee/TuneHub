@@ -7,9 +7,11 @@ import {
   generateHandpanSegment,
   HANDPAN_DEFAULT_CONFIG,
 } from "../core/handpan.mjs";
-import { Player } from "../audio/player.mjs";
+import { Player, LOOKAHEAD_HIDDEN, LOOKAHEAD_VISIBLE } from "../audio/player.mjs";
 import { exportWav } from "../audio/export.mjs";
 import { getLocale, setLocale, t, toggleLocale } from "./i18n.mjs";
+import { PlaybackSession, SESSION_ARTWORK } from "./media-session.mjs";
+import { initPwa, refreshInstallButton } from "./pwa.mjs";
 
 const state = {
   seed: newSeedString(),
@@ -20,6 +22,108 @@ const state = {
   busy: false,
 };
 const player = new Player({ analyse: true });
+
+/** 锁屏 / 后台播放桥接：静音保活音轨 + Media Session 控件。 */
+const session = new PlaybackSession({
+  getContext: () => player.ctx,
+  isPlaying: () => player.playing,
+});
+session.watchContext();
+
+function setPlayButton(playing) {
+  const button = document.getElementById("playBtn");
+  if (!button) return;
+  button.textContent = playing ? "Ⅱ" : "▶";
+  button.setAttribute("aria-label", playing ? t("handpanStop") : t("handpanPlay"));
+}
+
+function updateSessionMetadata() {
+  if (!state.piece) return;
+  session.setMetadata({
+    title: `Handpan Solo · ${state.seed.toUpperCase()}`,
+    artist: "TuneHub",
+    album: t("handpanSeries"),
+    artwork: SESSION_ARTWORK,
+  });
+}
+
+async function resumeFromSession() {
+  if (player.playing) return;
+  try {
+    await player.play();
+    setPlayButton(true);
+    await session.start();
+  } catch (error) {
+    setHint(t("handpanPlayFailed", { error: error.message }), "warn");
+  }
+}
+
+function pauseFromSession() {
+  if (player.playing) player.pause();
+  setPlayButton(false);
+  session.pause();
+  draw();
+}
+
+function stopFromSession() {
+  player.stop();
+  setPlayButton(false);
+  session.stop();
+  draw();
+}
+
+async function seekFromSession(details) {
+  if (!details || !Number.isFinite(details.seekTime)) return;
+  try {
+    await player.play(details.seekTime);
+    setPlayButton(true);
+    await session.start();
+  } catch (error) {
+    setHint(t("handpanPlayFailed", { error: error.message }), "warn");
+  }
+}
+
+session.bind({
+  onPlay: () => resumeFromSession(),
+  onPause: () => pauseFromSession(),
+  onStop: () => stopFromSession(),
+  onSeek: (details) => seekFromSession(details),
+  onSeekBackward: (details) => seekFromSession({ seekTime: Math.max(0, player.position - (details?.seekOffset ?? 10)) }),
+  onSeekForward: (details) => seekFromSession({ seekTime: player.position + (details?.seekOffset ?? 10) }),
+});
+
+player.onEnded = () => {
+  setPlayButton(false);
+  session.stop();
+  draw();
+};
+
+// 无尽续写走定时器：息屏后 rAF 不跑，只有这里还在推进。
+player.onTick = ({ horizon }) => {
+  try {
+    keepEndlessBuffer(horizon);
+  } catch (error) {
+    state.endless = false;
+    syncEndlessButton();
+    syncStats();
+    setHint(t("handpanEndlessFailed", { error: error.message }), "warn");
+  }
+  if (state.piece) session.updatePosition(player.position, state.piece.totalSeconds);
+};
+
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    player.setLookahead(LOOKAHEAD_HIDDEN);
+    player.fill();
+    return;
+  }
+  player.setLookahead(LOOKAHEAD_VISIBLE);
+  if (player.playing) {
+    if (player.ctx && player.ctx.state !== "running") player.ctx.resume().catch(() => {});
+    setPlayButton(true);
+    draw();
+  }
+});
 const canvas = document.getElementById("viz");
 const ctx = canvas.getContext("2d");
 const FIELD_MIDIS = [57, 59, 62, 64, 66, 69, 71, 74];
@@ -105,6 +209,8 @@ function applyLocale(locale = getLocale()) {
   document.getElementById("hint").textContent = state.endless
     ? t("handpanEndlessStarted")
     : t("handpanStartHint");
+  refreshInstallButton();
+  updateSessionMetadata();
 }
 
 function resize() {
@@ -240,9 +346,9 @@ async function regenerate({ newSeed = false, resume = true } = {}) {
 }
 
 /** 在片段结束前预接下一段，保持同一个 AudioContext 和模态尾音。 */
-function keepEndlessBuffer() {
+function keepEndlessBuffer(edge = player.position) {
   if (!state.endless || !player.playing || !state.piece) return;
-  if (state.piece.totalSeconds - player.position > 12) return;
+  if (state.piece.totalSeconds - edge > 12) return;
   const segment = generateHandpanSegment({
     seed: state.seed,
     segmentIndex: state.nextSegmentIndex,
@@ -257,18 +363,20 @@ function keepEndlessBuffer() {
 }
 
 async function togglePlay() {
-  const button = document.getElementById("playBtn");
   if (player.playing) {
     player.stop();
-    button.textContent = "▶";
-    button.setAttribute("aria-label", t("handpanPlay"));
+    setPlayButton(false);
+    session.stop();
     draw();
     return;
   }
   try {
+    // 保活音轨要在用户手势的同一个任务里启动，所以先于 await 播放器点火。
+    const keepAlive = session.start();
     await player.play(0);
-    button.textContent = "Ⅱ";
-    button.setAttribute("aria-label", t("handpanStop"));
+    setPlayButton(true);
+    updateSessionMetadata();
+    await keepAlive;
     setHint(t("handpanPlaying"), "good");
   } catch (error) {
     setHint(t("handpanPlayFailed", { error: error.message }), "warn");
@@ -345,25 +453,14 @@ function bindControls() {
 }
 
 function animate() {
-  try {
-    keepEndlessBuffer();
-  } catch (error) {
-    state.endless = false;
-    syncEndlessButton();
-    syncStats();
-    setHint(t("handpanEndlessFailed", { error: error.message }), "warn");
-  }
-  if (player.playing && player.position >= state.piece.totalSeconds) {
-    player.stop();
-    const button = document.getElementById("playBtn");
-    button.textContent = "▶";
-    button.setAttribute("aria-label", t("handpanPlay"));
-  }
+  // 前台用 rAF 画图；后台 rAF 停了，续写由 player.onTick 负责，自然播完由 player.onEnded 收尾。
+  if (player.playing) keepEndlessBuffer(player.position);
   draw();
   requestAnimationFrame(animate);
 }
 
 async function boot() {
+  initPwa();
   applyLocale();
   bindControls();
   window.addEventListener("resize", resize);

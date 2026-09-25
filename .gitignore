@@ -2,3 +2,18 @@
 .DS_Store
 *.log
 .chrome-profile/
+
+# 发布暂存目录（deploy/deploy.sh 组装出来的）
+.deploy/
+
+# 部署密钥：只放本机，永远不入库
+.env
+.env.local
+.env.deploy.local
+deploy/.env.deploy.local
+*.pem
+*.key
+
+# Python 部署脚本的字节码缓存
+__pycache__/
+*.pyc

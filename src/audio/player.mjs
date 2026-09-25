@@ -4,13 +4,22 @@
  * 实时播放器：前瞻调度 + 可跳转。
  *
  * 关键设计：**不使用 setTimeout 参与发声调度**（demo 的教训），
- * 而是用 requestAnimationFrame 做低帧率检查，把事件按音频时钟排进图里。
+ * 而是用 setInterval 做低帧率检查，把事件按音频时钟排进图里。
  * 这样实时与离线两条路径共用同一个 playNoteOn，行为一致。
+ *
+ * 后台播放相关：
+ *  - `lookahead` 可在页面隐藏时调大，让未来若干秒的音符提前排进音频图；
+ *    移动端息屏后定时器会被节流，提前排好的音符不受影响。
+ *  - `onTick` 让上层有机会在**定时器里**（而不是 requestAnimationFrame 里）
+ *    续写无尽模式的下一段——rAF 在后台根本不跑。
  */
 
 import { buildMasterBus, playNoteOn } from "./engine.mjs";
 
-const LOOKAHEAD = 0.65; // 每次检查向前调度多少秒
+/** 前台：小前瞻，保证拖滑块后的重新生成足够跟手。 */
+export const LOOKAHEAD_VISIBLE = 0.65;
+/** 后台 / 息屏：大前瞻，扛住定时器节流。 */
+export const LOOKAHEAD_HIDDEN = 25;
 const CHECK_MS = 80; // 检查间隔（仅用于决定"该调度了"，不作为时间基准）
 
 export class Player {
@@ -26,6 +35,9 @@ export class Player {
     this.playing = false;
     this.muted = new Set();
     this.onProgress = null;
+    this.onTick = null; // ({ musicNow, horizon, position, total }) => void
+    this.onEnded = null; // 自然播完（不是用户 stop）时触发
+    this.lookahead = LOOKAHEAD_VISIBLE;
     // 噪声（混响 IR / 打击底噪）也由种子派生，保证实时与离线一致
     this.noiseSeed = "tunehub";
     this.mix = {};
@@ -38,6 +50,12 @@ export class Player {
       typeof window !== "undefined" &&
       !!(window.AudioContext || window.webkitAudioContext)
     );
+  }
+
+  /** 调整前瞻窗口（秒）。页面隐藏时调大，回到前台再调小。 */
+  setLookahead(seconds) {
+    if (!Number.isFinite(seconds) || seconds <= 0) return;
+    this.lookahead = seconds;
   }
 
   async init() {
@@ -53,14 +71,14 @@ export class Player {
 
   async resume() {
     await this.init();
-    if (this.ctx.state === "suspended") await this.ctx.resume();
+    if (this.ctx.state !== "running") await this.ctx.resume();
   }
 
   /** 载入作品（不自动播放）。 */
   async load(piece) {
     this.piece = piece;
     this.events = piece.events;
-    this.stop();
+    this._halt();
     const mix = piece.mix ?? {};
     const nextMixKey = JSON.stringify(mix);
     const nextSeed = piece.seed ?? "tunehub";
@@ -111,7 +129,7 @@ export class Player {
     await this.resume();
     if (!this.events.length) return;
     const from = fromSeconds == null ? this.position : fromSeconds;
-    this.stop();
+    this._halt();
 
     this.offset = Math.max(0, Math.min(from, this.piece.totalSeconds));
     this.startCtxTime = this.ctx.currentTime + 0.08; // 留一点余量，避免首音被吃掉
@@ -130,7 +148,31 @@ export class Player {
     this.timer = setInterval(() => this._tick(), CHECK_MS);
   }
 
+  /**
+   * 暂停：记住当前播放头，停掉调度但不回到作品开头。
+   * 锁屏上的「暂停 / 继续」走这条路径；界面上的「停止」仍然从 0 重新开始。
+   */
+  pause() {
+    if (!this.playing) return;
+    const at = this.position;
+    this._halt();
+    this.offset = Math.max(0, at);
+  }
+
   stop() {
+    this._halt();
+  }
+
+  /**
+   * 立刻按当前前瞻窗口补排一次。
+   * 页面刚转入后台时调用：趁定时器还没被节流，把后面几十秒先排进音频图。
+   */
+  fill() {
+    this._tick();
+  }
+
+  /** 内部：只停调度，不触发 onEnded。 */
+  _halt() {
     this.playing = false;
     if (this.timer) {
       clearInterval(this.timer);
@@ -138,12 +180,12 @@ export class Player {
     }
   }
 
-  /** 内部：把未来 LOOKAHEAD 秒内的事件排进音频图。 */
+  /** 内部：把未来 lookahead 秒内的事件排进音频图。 */
   _tick() {
     if (!this.playing || !this.ctx) return;
     const now = this.ctx.currentTime;
     const musicNow = this.offset + (now - this.startCtxTime);
-    const horizon = musicNow + LOOKAHEAD;
+    const horizon = musicNow + this.lookahead;
 
     while (this.nextIdx < this.events.length) {
       const e = this.events[this.nextIdx];
@@ -158,7 +200,26 @@ export class Player {
     // 结束检测
     if (musicNow >= this.piece.totalSeconds) {
       const stillRinging = this.muted.size >= 4 ? 0 : 2;
-      if (musicNow >= this.piece.totalSeconds + stillRinging) this.stop();
+      if (musicNow >= this.piece.totalSeconds + stillRinging) {
+        this._halt();
+        if (this.onEnded) this.onEnded();
+        return;
+      }
+    }
+
+    // 上层的续写机会：在后台也照常触发（rAF 在后台是停的，不能用它续写）。
+    // 续写失败不能打断调度循环——音还要继续响。
+    if (this.onTick) {
+      try {
+        this.onTick({
+          musicNow,
+          horizon,
+          position: this.position,
+          total: this.piece.totalSeconds,
+        });
+      } catch (error) {
+        console.error("[TuneHub] onTick 续写失败：", error);
+      }
     }
 
     if (this.onProgress)

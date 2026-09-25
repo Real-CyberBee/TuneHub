@@ -1,0 +1,63 @@
+{
+  "id": "tunehub",
+  "name": "TuneHub — Ambient Electronic Music",
+  "short_name": "TuneHub",
+  "description": "Open-source, browser-first ambient electronic music studio. Generative scenes, endless playback, and WAV / stems / MIDI / Score export — fully offline-capable.",
+  "lang": "en",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "orientation": "any",
+  "background_color": "#0b0c11",
+  "theme_color": "#0b0c11",
+  "categories": ["music", "entertainment", "utilities"],
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Handpan Solo",
+      "short_name": "Handpan",
+      "description": "A generative handpan solo that keeps resonating",
+      "url": "./handpan.html",
+      "icons": [
+        {
+          "src": "./icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "How the sound works",
+      "short_name": "Sound guide",
+      "url": "./handpan-guide.html"
+    }
+  ]
+}

@@ -17,7 +17,7 @@ import {
   generateAmbientSegment,
   getAmbientScene,
 } from "../core/ambient.mjs";
-import { Player } from "../audio/player.mjs";
+import { Player, LOOKAHEAD_HIDDEN, LOOKAHEAD_VISIBLE } from "../audio/player.mjs";
 import {
   exportWav,
   exportStems,
@@ -35,6 +35,8 @@ import {
   t,
   toggleLocale,
 } from "./i18n.mjs";
+import { PlaybackSession, SESSION_ARTWORK } from "./media-session.mjs";
+import { initPwa, refreshInstallButton } from "./pwa.mjs";
 
 // ---------------------------------------------------------------------------
 // 状态
@@ -55,6 +57,107 @@ const state = {
 };
 
 const player = new Player();
+
+/** 锁屏 / 后台播放桥接：静音保活音轨 + Media Session 控件。 */
+const session = new PlaybackSession({
+  getContext: () => player.ctx,
+  isPlaying: () => player.playing,
+});
+session.watchContext();
+
+function setPlayButton(playing) {
+  const button = document.getElementById("playBtn");
+  if (button) button.textContent = playing ? t("stop") : t("play");
+}
+
+/** 把当前作品告诉系统，锁屏 / 通知栏就能显示场景名与种子。 */
+function updateSessionMetadata() {
+  if (!state.piece) return;
+  const scene = localizedScene(getAmbientScene(state.ambientId));
+  const title = `${scene.name} · ${state.seed}`;
+  session.setMetadata({
+    title: state.endless ? `∞ ${title}` : title,
+    artist: "TuneHub",
+    album: scene.tagline,
+    artwork: SESSION_ARTWORK,
+  });
+}
+
+async function resumeFromSession() {
+  if (player.playing) return;
+  try {
+    await player.play();
+    setPlayButton(true);
+    await session.start();
+  } catch (err) {
+    setHint(t("playFailed", { error: err.message }), "warn");
+  }
+}
+
+function pauseFromSession() {
+  if (player.playing) player.pause();
+  setPlayButton(false);
+  session.pause();
+  draw();
+}
+
+function stopFromSession() {
+  player.stop();
+  setPlayButton(false);
+  session.stop();
+  draw();
+}
+
+async function seekFromSession(details) {
+  if (!details || !Number.isFinite(details.seekTime)) return;
+  try {
+    await player.play(details.seekTime);
+    setPlayButton(true);
+    await session.start();
+  } catch (err) {
+    setHint(t("playFailed", { error: err.message }), "warn");
+  }
+}
+
+session.bind({
+  onPlay: () => resumeFromSession(),
+  onPause: () => pauseFromSession(),
+  onStop: () => stopFromSession(),
+  onSeek: (details) => seekFromSession(details),
+  onSeekBackward: (details) => seekFromSession({ seekTime: Math.max(0, player.position - (details?.seekOffset ?? 10)) }),
+  onSeekForward: (details) => seekFromSession({ seekTime: player.position + (details?.seekOffset ?? 10) }),
+});
+
+// 自然播完（不是用户按停止）时，把界面与媒体会话一起收尾。
+player.onEnded = () => {
+  setPlayButton(false);
+  session.stop();
+  draw();
+};
+
+// 无尽模式的续写走定时器，不走 rAF —— 息屏后 rAF 是停的。
+player.onTick = ({ horizon }) => {
+  keepEndlessBuffer(horizon);
+  if (state.piece) session.updatePosition(player.position, state.piece.totalSeconds);
+};
+
+/**
+ * 页面转入后台时把前瞻窗口放大，让后面的音符提前排进音频图，
+ * 这样即使移动端把定时器节流到 1 秒一次，音乐也不会断。
+ */
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    player.setLookahead(LOOKAHEAD_HIDDEN);
+    player.fill();
+    return;
+  }
+  player.setLookahead(LOOKAHEAD_VISIBLE);
+  if (player.playing) {
+    if (player.ctx && player.ctx.state !== "running") player.ctx.resume().catch(() => {});
+    setPlayButton(true);
+    draw();
+  }
+});
 
 function applyLocale(locale = getLocale()) {
   setLocale(locale);
@@ -116,6 +219,8 @@ function applyLocale(locale = getLocale()) {
   syncSliderValues();
   if (state.piece) renderStatic();
   document.getElementById("hint").textContent = t("startHint");
+  refreshInstallButton();
+  updateSessionMetadata();
 }
 
 // ---------------------------------------------------------------------------
@@ -233,6 +338,8 @@ function resizeCanvas() {
 }
 
 const VOICE_ORDER = ["bass", "harmony", "melody", "perc"];
+/** 单帧最多画多少个音符事件；无尽模式时间线很长时按步长抽稀。 */
+const MAX_DRAWN_EVENTS = 6000;
 const VOICE_COLOR = {
   bass: "#6b7fd7",
   harmony: "#4ecdc4",
@@ -290,7 +397,10 @@ function draw() {
   }
 
   // 音符
-  for (const e of piece.events) {
+  // 无尽模式跑久了事件会成千上万；超过阈值就按步长抽稀，避免每帧画到卡顿。
+  const stride = Math.max(1, Math.ceil(piece.events.length / MAX_DRAWN_EVENTS));
+  for (let i = 0; i < piece.events.length; i += stride) {
+    const e = piece.events[i];
     const row = VOICE_ORDER.indexOf(e.voice);
     if (row < 0) continue;
     const y = padT + row * rowH;
@@ -416,6 +526,7 @@ function renderStatic() {
   endlessBtn.classList.toggle("active", state.endless);
   endlessBtn.setAttribute("aria-pressed", String(state.endless));
   endlessBtn.textContent = state.endless ? t("endlessOn") : t("endless");
+  updateSessionMetadata();
 }
 
 function renderScenes() {
@@ -475,11 +586,11 @@ function toggleLock(id) {
   renderStatic();
 }
 
-/** 在当前片段剩余一小段时预接下一段；生成是同步纯函数，所以可在动画帧安全执行。 */
-function keepEndlessBuffer() {
+/** 在当前片段剩余不足一段缓冲时预接下一段；edge = 已经排到（或播放到）的时间点。 */
+function keepEndlessBuffer(edge = player.position) {
   if (!state.endless || !player.playing || !state.piece) return;
-  const remaining = state.piece.totalSeconds - player.position;
-  if (remaining > 12) return;
+  const remaining = state.piece.totalSeconds - edge;
+  if (remaining > ENDLESS_BUFFER_SECONDS) return;
   const segment = generateAmbientSegment({
     seed: state.seed,
     sceneId: state.ambientId,
@@ -501,26 +612,33 @@ function setHint(msg, cls = "") {
   el.className = "hint" + (cls ? " " + cls : "");
 }
 
+/** 续写提前量（秒）：比前台前瞻大得多，后台节流时也够用。 */
+const ENDLESS_BUFFER_SECONDS = 12;
+
 // ---------------------------------------------------------------------------
 // 播放控制
 // ---------------------------------------------------------------------------
 
 async function togglePlay() {
-  const btn = document.getElementById("playBtn");
   if (!player.supported) {
     setHint(t("unsupported"), "warn");
     return;
   }
   if (player.playing) {
     player.stop();
-    btn.textContent = t("play");
+    setPlayButton(false);
+    session.stop();
     draw();
     return;
   }
   try {
     setHint(t("startingAudio"));
+    // 保活音轨必须在用户手势的同一个任务里启动，所以在 await 播放器之前先点火。
+    const keepAlive = session.start();
     await player.play(0);
-    btn.textContent = t("stop");
+    setPlayButton(true);
+    updateSessionMetadata();
+    await keepAlive;
     setHint(t("playing"));
   } catch (err) {
     setHint(t("playFailed", { error: err.message }), "warn");
@@ -529,12 +647,9 @@ async function togglePlay() {
 
 function animate() {
   if (player.playing) {
-    keepEndlessBuffer();
+    // 前台用 rAF 画图；后台 rAF 停了，续写由 player.onTick 负责。
+    keepEndlessBuffer(player.position);
     draw();
-    if (player.position >= (state.piece?.totalSeconds ?? 0)) {
-      player.stop();
-      document.getElementById("playBtn").textContent = t("play");
-    }
   }
   requestAnimationFrame(animate);
 }
@@ -775,6 +890,7 @@ function bindControls() {
 }
 
 async function boot() {
+  initPwa();
   const fromUrl = decodeState();
   applyLocale();
   renderScenes();
