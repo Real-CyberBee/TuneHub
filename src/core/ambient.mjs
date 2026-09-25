@@ -34,7 +34,7 @@ export function makeAmbientSnapshot({
 }) {
   const scene = getAmbientScene(sceneId);
   return makePieceSnapshot({
-    packId: ambientPack.manifest.id,
+    packId: scene.packId ?? ambientPack.manifest.id,
     packVersion: ambientPack.manifest.version,
     sceneId: scene.id,
     sessionStrategyId: scene.sessionStrategyId,

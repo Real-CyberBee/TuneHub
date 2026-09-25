@@ -14,7 +14,7 @@ const LOOKAHEAD = 0.65; // 每次检查向前调度多少秒
 const CHECK_MS = 80; // 检查间隔（仅用于决定"该调度了"，不作为时间基准）
 
 export class Player {
-  constructor() {
+  constructor({ analyse = false } = {}) {
     this.ctx = null;
     this.bus = null;
     this.piece = null;
@@ -30,6 +30,7 @@ export class Player {
     this.noiseSeed = "tunehub";
     this.mix = {};
     this.mixKey = "";
+    this.analyse = analyse;
   }
 
   get supported() {
@@ -43,7 +44,11 @@ export class Player {
     if (this.ctx) return;
     const Ctx = window.AudioContext || window.webkitAudioContext;
     this.ctx = new Ctx({ latencyHint: "interactive" });
-    this.bus = buildMasterBus(this.ctx, { seed: this.noiseSeed, ...this.mix });
+    this.bus = buildMasterBus(this.ctx, {
+      seed: this.noiseSeed,
+      ...this.mix,
+      analyse: this.analyse,
+    });
   }
 
   async resume() {
@@ -58,18 +63,21 @@ export class Player {
     this.stop();
     const mix = piece.mix ?? {};
     const nextMixKey = JSON.stringify(mix);
+    const nextSeed = piece.seed ?? "tunehub";
+    const busChanged = this.noiseSeed !== nextSeed || this.mixKey !== nextMixKey;
+    this.noiseSeed = nextSeed;
     this.mix = mix;
+    this.mixKey = nextMixKey;
     // 种子和场景空间感都决定总线。任一改变时重建，避免切场景后仍沿用上个场景的混响。
-    if (
-      this.ctx &&
-      (this.noiseSeed !== piece.seed || this.mixKey !== nextMixKey)
-    ) {
-      this.noiseSeed = piece.seed;
-      this.mixKey = nextMixKey;
+    if (this.ctx && busChanged) {
       try {
         this.bus.master.disconnect();
       } catch {}
-      this.bus = buildMasterBus(this.ctx, { seed: this.noiseSeed, ...mix });
+      this.bus = buildMasterBus(this.ctx, {
+        seed: this.noiseSeed,
+        ...mix,
+        analyse: this.analyse,
+      });
     }
   }
 

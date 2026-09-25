@@ -9,5 +9,6 @@
 - [氛围音乐架构](AMBIENT_ARCHITECTURE.md)：场景化氛围电子音乐实现。
 - [内容包说明](CONTENT_PACKS.md)：内容包、校验和 Score 导出。
 - [场景声学设计调研](AMBIENT_SCENE_SOUND_DESIGN_RESEARCH.md)：场景声学建议、证据与限制。
+- [开源音乐引擎调研](AUDIO_ENGINE_RESEARCH.md)：当前 Web Audio 实现边界、候选引擎比较与选型建议。
 - [内容包样例与贡献指南](examples-README.md)。
 - [历史调研文档](archive/)：保留早期原始记录。

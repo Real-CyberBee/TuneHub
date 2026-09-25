@@ -32,6 +32,9 @@ export async function renderRange(events, opts = {}) {
     fadeOut = 0.35,
     volume = 0.85,
     reverbAmount = 0.34,
+    reverbSeconds = 2.4,
+    reverbDecay = 3,
+    reverbBrightness = 0.32,
     seed = 'tunehub',
   } = opts;
 
@@ -40,7 +43,14 @@ export async function renderRange(events, opts = {}) {
   if (!Ctx) throw new Error('此浏览器不支持 OfflineAudioContext，无法导出');
 
   const ctx = new Ctx(2, Math.ceil(total * sampleRate), sampleRate);
-  const bus = buildMasterBus(ctx, { reverbAmount, volume, seed });
+  const bus = buildMasterBus(ctx, {
+    reverbAmount,
+    reverbSeconds,
+    reverbDecay,
+    reverbBrightness,
+    volume,
+    seed,
+  });
 
   // 事件流是确定性的，随机噪声（打击底噪、混响 IR）也由 seed 派生，
   // 因此同一 (事件, seed, 区间) 永远渲染出**逐样本相同**的音频。
@@ -96,14 +106,19 @@ export function encodeWav(audioBuffer) {
   writeStr(36, 'data');
   view.setUint32(40, dataSize, true);
 
-  // 交错写入并做软限幅（避免整数削波产生刺耳失真）
+  // 渲染结果已通过主总线的压缩与限制；PCM 编码不再额外改变未削波的波形。
+  // 若峰值仍超过 1，只做整段线性缩放，避免整数削波引入新的谐波。
   const channels = [];
   for (let c = 0; c < numCh; c++) channels.push(audioBuffer.getChannelData(c));
+  let peak = 0;
+  for (const channel of channels) {
+    for (let i = 0; i < len; i++) peak = Math.max(peak, Math.abs(channel[i]));
+  }
+  const linearGain = peak > 1 ? 1 / peak : 1;
   let offset = 44;
   for (let i = 0; i < len; i++) {
     for (let c = 0; c < numCh; c++) {
-      let s = channels[c][i];
-      s = Math.tanh(s * 1.05) * 0.98; // 软限幅
+      let s = channels[c][i] * linearGain;
       s = Math.max(-1, Math.min(1, s));
       view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
       offset += 2;

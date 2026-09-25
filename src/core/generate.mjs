@@ -453,10 +453,12 @@ export function generate(seed, config = {}, scales = SCALES, overrides = {}) {
       const melodyEventsPerBar =
         arrangement.melody.eventsPerBar ??
         defaultMelodyEventsPerBar(effectiveDensity);
+      const melodyLow = arrangement.melody.lowMidi ?? VOICES.melody.low;
+      const melodyHigh = arrangement.melody.highMidi ?? VOICES.melody.high;
       const pitchPool = scalePitchesInRange(
         scale,
-        VOICES.melody.low,
-        VOICES.melody.high,
+        melodyLow,
+        melodyHigh,
         normalizedConfig.rootMidi,
       );
       for (let bar = 0; bar < section.bars; bar++) {
@@ -540,10 +542,16 @@ export function generate(seed, config = {}, scales = SCALES, overrides = {}) {
             time: barStart + step * stepSeconds + swingOffset,
             duration: durationSteps * stepSeconds * 0.92,
             voice: "melody",
-            midi: clampToVoiceRange("melody", midi),
+            midi: Math.min(melodyHigh, Math.max(melodyLow, midi)),
             velocity: 0.62 + 0.3 * (melodyIndex === 0 ? 1 : 0.4),
             section: section.name,
-            timbre: arrangement.melody.timbre,
+            timbre: Array.isArray(arrangement.melody.timbres)
+              ? weightedChoice(
+                  randomStreamByVoice.melody,
+                  arrangement.melody.timbres.map((item) => item.timbre),
+                  arrangement.melody.timbres.map((item) => item.weight),
+                )
+              : arrangement.melody.timbre,
           });
         }
       }

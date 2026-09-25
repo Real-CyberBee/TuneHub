@@ -25,6 +25,16 @@ import {
   encodeWav,
 } from "../audio/export.mjs";
 import { exportMidi, exportScoreJson } from "../audio/midi.mjs";
+import {
+  getLocale,
+  localizedScene,
+  localizedScale,
+  localizedSection,
+  localizedVoice,
+  setLocale,
+  t,
+  toggleLocale,
+} from "./i18n.mjs";
 
 // ---------------------------------------------------------------------------
 // 状态
@@ -45,6 +55,68 @@ const state = {
 };
 
 const player = new Player();
+
+function applyLocale(locale = getLocale()) {
+  setLocale(locale);
+  document.documentElement.lang = getLocale() === "zh" ? "zh-CN" : "en";
+  document.title = t("title");
+  const textById = {
+    tagline: "tagline",
+    handpanLink: "handpanLink",
+    ambientTitle: "ambientTitle",
+    moodLabel: "mood",
+    moodLow: "moodLow",
+    moodHigh: "moodHigh",
+    energyLabel: "energy",
+    energyLow: "energyLow",
+    energyHigh: "energyHigh",
+    bpmLabel: "tempo",
+    bpmLow: "slow",
+    bpmHigh: "fast",
+    playBtn: "play",
+    rerollBtn: "reroll",
+    scaleBtn: "scale",
+    shareBtn: "share",
+    exportBtn: "exportWav",
+    stemsBtn: "stems",
+    midiBtn: "midi",
+    scoreBtn: "score",
+    offlineBtn: "offline",
+  };
+  for (const [id, key] of Object.entries(textById)) {
+    const element = document.getElementById(id);
+    if (element) element.textContent = t(key);
+  }
+  document.getElementById("ambientEyebrow").textContent = t("ambientEyebrow");
+  const brandSuffix = document.querySelector(".brand .zh");
+  brandSuffix.textContent = getLocale() === "zh" ? "音枢" : "Ambient Electronic";
+  brandSuffix.style.letterSpacing = getLocale() === "zh" ? "3px" : "0.5px";
+  document.getElementById("moodLabel").textContent = t("mood");
+  document.getElementById("energyLabel").textContent = t("energy");
+  document.getElementById("bpmLabel").textContent = t("tempo");
+  document.getElementById("moodLow").textContent = t("moodLow");
+  document.getElementById("energyLow").textContent = t("energyLow");
+  document.getElementById("energyHigh").textContent = t("energyHigh");
+  const localeBtn = document.getElementById("localeBtn");
+  localeBtn.textContent = t("language");
+  localeBtn.title = t("languageTitle");
+  document.getElementById("rerollBtn").title = t("rerollTitle");
+  document.getElementById("scaleBtn").title = t("scaleTitle");
+  document.getElementById("endlessBtn").title = t("endlessTitle");
+  document.getElementById("stemsBtn").title = t("stemsTitle");
+  document.getElementById("midiBtn").title = t("midiTitle");
+  document.getElementById("scoreBtn").title = t("scoreTitle");
+  document.getElementById("offlineBtn").title = t("offlineTitle");
+  document.getElementById("viz").setAttribute("aria-label", t("vizLabel"));
+  document.getElementById("scenes").setAttribute("aria-label", t("scenesLabel"));
+  document.getElementById("voices").setAttribute("aria-label", t("voices"));
+  document.getElementById("seedLabel").title = t("seedTitle");
+  document.getElementById("playBtn").textContent = player.playing ? t("stop") : t("play");
+  renderScenes();
+  syncSliderValues();
+  if (state.piece) renderStatic();
+  document.getElementById("hint").textContent = t("startHint");
+}
 
 // ---------------------------------------------------------------------------
 // URL 序列化（种子 + 配置 + 声部覆盖 = 作品的全部）
@@ -196,7 +268,7 @@ function draw() {
     vctx.font = "10px -apple-system, sans-serif";
     vctx.textAlign = "left";
     vctx.textBaseline = "middle";
-    vctx.fillText(VOICES[id].label, 6, y + rowH / 2);
+    vctx.fillText(localizedVoice(id, VOICES[id].label), 6, y + rowH / 2);
   });
 
   // 段落边界与名称
@@ -214,7 +286,7 @@ function draw() {
     vctx.stroke();
     vctx.fillStyle = "rgba(255,255,255,0.20)";
     vctx.font = "9px -apple-system, sans-serif";
-    vctx.fillText(s.name, (x0 + x1) / 2, H - 12);
+    vctx.fillText(localizedSection(s.name), (x0 + x1) / 2, H - 12);
   }
 
   // 音符
@@ -290,15 +362,19 @@ function roundRect(ctx, x, y, w, h, r) {
 
 function renderStatic() {
   const piece = state.piece;
-  document.getElementById("seedLabel").textContent = `种子 ${piece.seed}`;
+  document.getElementById("seedLabel").textContent = t("seed", { seed: piece.seed });
   const s = piece.stats;
-  const verdictLabel =
-    { good: "悦耳", fair: "尚可", poor: "欠佳" }[s.verdict] ?? "";
+  const verdictLabel = t(`verdict.${s.verdict}`);
   const durationLabel = state.endless
-    ? `∞ 无尽 · 已预排 ${piece.ambient?.segmentCount ?? 1} 段`
-    : `${Math.round(piece.totalSeconds)} 秒`;
-  document.getElementById("statLabel").textContent =
-    `${durationLabel} · ${piece.events.length} 音符 · ${piece.scaleName} · ${verdictLabel} ${(s.pleasantness * 100).toFixed(0)}%`;
+    ? t("endlessSegments", { count: piece.ambient?.segmentCount ?? 1 })
+    : t("seconds", { count: Math.round(piece.totalSeconds) });
+  document.getElementById("statLabel").textContent = t("seedStats", {
+    duration: durationLabel,
+    events: piece.events.length,
+    scale: localizedScale(piece.scaleName),
+    verdict: verdictLabel,
+    score: (s.pleasantness * 100).toFixed(0),
+  });
 
   // 声部控件
   const voicesEl = document.getElementById("voices");
@@ -311,8 +387,9 @@ function renderStatic() {
       (state.muted.has(id) ? " muted" : "") +
       (state.locked.has(id) ? " locked" : "");
     el.style.setProperty("--vc", VOICE_COLOR[id]);
-    el.innerHTML = `<span class="vdot"></span><span class="vname">${v.label}</span>
-      <span class="vlock">${state.locked.has(id) ? "🔒 锁定" : "静音"}</span>`;
+    const partLabel = localizedVoice(id, v.label);
+    el.innerHTML = `<span class="vdot"></span><span class="vname">${partLabel}</span>
+      <span class="vlock">${state.locked.has(id) ? t("locked") : t("mute")}</span>`;
     el.querySelector(".vname").addEventListener("click", (ev) => {
       ev.stopPropagation();
       toggleMute(id);
@@ -331,14 +408,14 @@ function renderStatic() {
   document.querySelectorAll(".scene").forEach((b) => {
     b.classList.toggle("active", b.dataset.id === state.ambientId);
   });
-  const scene = getAmbientScene(state.ambientId);
+  const scene = localizedScene(getAmbientScene(state.ambientId));
   document.getElementById("sceneStatus").textContent = state.sceneAdjusted
-    ? `${scene.name} · 已微调`
+    ? `${scene.name} · ${t("adjusted")}`
     : scene.tagline;
   const endlessBtn = document.getElementById("endlessBtn");
   endlessBtn.classList.toggle("active", state.endless);
   endlessBtn.setAttribute("aria-pressed", String(state.endless));
-  endlessBtn.textContent = state.endless ? "∞ 无尽模式：开" : "∞ 无尽模式";
+  endlessBtn.textContent = state.endless ? t("endlessOn") : t("endless");
 }
 
 function renderScenes() {
@@ -348,11 +425,12 @@ function renderScenes() {
     const b = document.createElement("button");
     b.className = "scene";
     b.dataset.id = scene.id;
-    b.innerHTML = `<span class="scene-icon">${scene.icon}</span><span class="scene-copy"><b>${scene.name}</b><small>${scene.tags.join(" · ")}</small></span>`;
-    b.setAttribute("aria-label", `${scene.name}：${scene.tagline}`);
+    const localized = localizedScene(scene);
+    b.innerHTML = `<span class="scene-icon">${scene.icon}</span><span class="scene-copy"><b>${localized.name}</b><small>${localized.tags.join(" · ")}</small></span>`;
+    b.setAttribute("aria-label", `${localized.name}: ${localized.tagline}`);
     b.addEventListener("click", () => {
       applyScene(scene).catch((err) =>
-        setHint(`切换场景失败：${err.message}`, "warn"),
+        setHint(t("sceneFailed", { error: err.message }), "warn"),
       );
     });
     el.appendChild(b);
@@ -368,10 +446,12 @@ async function applyScene(scene) {
   syncSliderValues();
   await regenerate();
   if (wasPlaying) await player.play(0);
-  setHint(
-    `已切到「${scene.name}」：${scene.tagline}${state.endless ? " 无尽模式会持续编排新的片段。" : ""}`,
-    "good",
-  );
+  const localized = localizedScene(scene);
+  setHint(t("sceneChanged", {
+    name: localized.name,
+    tagline: localized.tagline,
+    endless: state.endless ? t("endlessContinues") : "",
+  }), "good");
 }
 
 function syncSliderValues() {
@@ -410,7 +490,7 @@ function keepEndlessBuffer() {
   state.piece = appendAmbientSegment(state.piece, segment);
   player.extend(state.piece);
   setHint(
-    `无尽模式已续写第 ${state.piece.ambient.segmentCount} 段：${getAmbientScene(state.ambientId).name}仍在延展。`,
+    t("endlessSegment", { count: state.piece.ambient.segmentCount, name: localizedScene(getAmbientScene(state.ambientId)).name }),
     "good",
   );
 }
@@ -428,22 +508,22 @@ function setHint(msg, cls = "") {
 async function togglePlay() {
   const btn = document.getElementById("playBtn");
   if (!player.supported) {
-    setHint("此浏览器不支持 Web Audio API，无法播放。", "warn");
+    setHint(t("unsupported"), "warn");
     return;
   }
   if (player.playing) {
     player.stop();
-    btn.textContent = "▶ 播放";
+    btn.textContent = t("play");
     draw();
     return;
   }
   try {
-    setHint("正在启动音频…");
+    setHint(t("startingAudio"));
     await player.play(0);
-    btn.textContent = "⏸ 停止";
-    setHint("正在播放。拖动滑块会立刻重新生成。");
+    btn.textContent = t("stop");
+    setHint(t("playing"));
   } catch (err) {
-    setHint(`播放失败：${err.message}`, "warn");
+    setHint(t("playFailed", { error: err.message }), "warn");
   }
 }
 
@@ -453,7 +533,7 @@ function animate() {
     draw();
     if (player.position >= (state.piece?.totalSeconds ?? 0)) {
       player.stop();
-      document.getElementById("playBtn").textContent = "▶ 播放";
+      document.getElementById("playBtn").textContent = t("play");
     }
   }
   requestAnimationFrame(animate);
@@ -469,8 +549,8 @@ async function doExport() {
   state.busy = true;
   btn.disabled = true;
   const original = btn.textContent;
-  btn.textContent = "渲染中…";
-  setHint("正在离线渲染（比实时快，不需要等播放）…");
+  btn.textContent = t("rendering");
+  setHint(t("exportingOffline"));
   try {
     const total = state.piece.totalSeconds;
     await exportWav(
@@ -485,11 +565,11 @@ async function doExport() {
       `tunehub-${state.seed}.wav`,
     );
     setHint(
-      `已导出 ${Math.round(total)} 秒 WAV（tunehub-${state.seed}.wav）。`,
+      t("exportedWav", { duration: Math.round(total), seed: state.seed }),
       "good",
     );
   } catch (err) {
-    setHint(`导出失败：${err.message}`, "warn");
+    setHint(t("exportFailed", { error: err.message }), "warn");
   } finally {
     state.busy = false;
     btn.disabled = false;
@@ -506,7 +586,7 @@ async function doOfflineCheck() {
   if (state.busy) return;
   state.busy = true;
   btn.disabled = true;
-  setHint("离线渲染中…");
+  setHint(t("offlineRendering"));
   const t0 = performance.now();
   try {
     const buf = await renderRange(state.piece.events, {
@@ -524,11 +604,11 @@ async function doOfflineCheck() {
     await audio.play();
     const speed = (buf.duration / (ms / 1000)).toFixed(1);
     setHint(
-      `离线渲染 ${buf.duration.toFixed(1)} 秒用时 ${ms}ms（约 ${speed}× 实时），正在试听。`,
+      t("offlinePlayed", { duration: buf.duration.toFixed(1), ms, speed }),
       "good",
     );
   } catch (err) {
-    setHint(`离线渲染失败：${err.message}`, "warn");
+    setHint(t("offlineFailed", { error: err.message }), "warn");
   } finally {
     state.busy = false;
     btn.disabled = false;
@@ -540,10 +620,10 @@ function doShare() {
   navigator.clipboard?.writeText(url).then(
     () =>
       setHint(
-        "分享链接已复制。链接里就是作品的全部信息——不需要服务器。",
+        t("linkCopied"),
         "good",
       ),
-    () => setHint(`复制失败，请手动复制：${url}`, "warn"),
+    () => setHint(t("copyFailed", { url }), "warn"),
   );
 }
 
@@ -563,6 +643,9 @@ const SCALE_CYCLE = [
 ];
 
 function bindControls() {
+  document.getElementById("localeBtn").addEventListener("click", () => {
+    applyLocale(toggleLocale());
+  });
   const bindSlider = (id, key, isInt) => {
     const el = document.getElementById(id);
     let raf = null;
@@ -577,7 +660,7 @@ function bindControls() {
           await regenerate();
           if (player.playing) await player.play(player.position);
         } catch (err) {
-          setHint(`重新生成失败：${err.message}`, "warn");
+          setHint(t("regenerateFailed", { error: err.message }), "warn");
         }
       });
     });
@@ -591,8 +674,8 @@ function bindControls() {
     await regenerate({ reroll: "all" });
     setHint(
       state.locked.size
-        ? `已重掷未锁定的声部（保留了 ${[...state.locked].map((v) => VOICES[v].label).join("、")}）。`
-        : "换了一个新作品。想留住某个声部？点它卡片上的「静音」右侧切换成「🔒 锁定」。",
+        ? t("rerolledLocked", { parts: [...state.locked].map((v) => localizedVoice(v, VOICES[v].label)).join(getLocale() === "zh" ? "、" : ", ") })
+        : t("rerolled"),
     );
     if (player.playing) await player.play(0);
   });
@@ -602,9 +685,7 @@ function bindControls() {
     state.sceneAdjusted = true;
     state.overrides = {};
     await regenerate();
-    setHint(
-      `换成了「${state.piece.scaleName}」。同一个种子，换个音阶——这就是律制与音阶层的意义。`,
-    );
+    setHint(t("scaleChanged", { scale: localizedScale(state.piece.scaleName) }));
     if (player.playing) await player.play(0);
   });
   document.getElementById("shareBtn").addEventListener("click", doShare);
@@ -613,7 +694,7 @@ function bindControls() {
     if (state.busy) return;
     state.busy = true;
     try {
-      setHint("正在按声部分轨离线渲染…");
+      setHint(t("exportingStems"));
       const stems = await exportStems(
         state.piece.events,
         {
@@ -626,11 +707,11 @@ function bindControls() {
         `tunehub-${state.seed}`,
       );
       setHint(
-        `已导出 ${Object.keys(stems).length} 个 WAV 分轨，可直接拖入 DAW。`,
+        t("exportedStems", { count: Object.keys(stems).length }),
         "good",
       );
     } catch (err) {
-      setHint(`分轨导出失败：${err.message}`, "warn");
+      setHint(t("stemsFailed", { error: err.message }), "warn");
     } finally {
       state.busy = false;
     }
@@ -639,11 +720,11 @@ function bindControls() {
     try {
       exportMidi(state.piece.score, `tunehub-${state.seed}.mid`);
       setHint(
-        "已导出可编辑 MIDI。微分音会以 MIDI pitch bend 投影；完整信息请同时导出 Score。",
+        t("exportedMidi"),
         "good",
       );
     } catch (err) {
-      setHint(`MIDI 导出失败：${err.message}`, "warn");
+      setHint(t("midiFailed", { error: err.message }), "warn");
     }
   });
   document.getElementById("scoreBtn").addEventListener("click", () => {
@@ -654,11 +735,11 @@ function bindControls() {
         `tunehub-${state.seed}-score.json`,
       );
       setHint(
-        "已导出无损 Score：含分数 Beat、Pitch、内容包引用和 Snapshot。",
+        t("exportedScore"),
         "good",
       );
     } catch (err) {
-      setHint(`Score 导出失败：${err.message}`, "warn");
+      setHint(t("scoreFailed", { error: err.message }), "warn");
     }
   });
   document
@@ -670,8 +751,8 @@ function bindControls() {
     renderStatic();
     setHint(
       state.endless
-        ? "无尽模式已开启：当前片段结束前会自动续写下一段，保持同一场景与种子轨迹。"
-        : "无尽模式已关闭：当前已排入的片段会播放完，然后停止。",
+        ? t("endlessStarted")
+        : t("endlessStopped"),
       "good",
     );
   });
@@ -695,6 +776,7 @@ function bindControls() {
 
 async function boot() {
   const fromUrl = decodeState();
+  applyLocale();
   renderScenes();
   bindControls();
   syncSliderValues();
@@ -703,15 +785,15 @@ async function boot() {
   if (!fromUrl) syncUrl();
 
   if (!player.supported) {
-    setHint("此浏览器不支持 Web Audio API。界面可以浏览，但无法出声。", "warn");
+    setHint(t("unsupportedBrowse"), "warn");
     document.getElementById("playBtn").disabled = true;
   } else {
-    setHint("按「▶ 播放」，或直接拖动下面的三个滑块。空格键也可以播放。");
+    setHint(t("startHint"));
   }
   animate();
 }
 
 boot().catch((err) => {
-  setHint(`初始化失败：${err.message}`, "warn");
+  setHint(t("initFailed", { error: err.message }), "warn");
   console.error(err);
 });

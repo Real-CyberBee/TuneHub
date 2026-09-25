@@ -453,6 +453,198 @@ function seedBase(seed, label) {
   return (hashString(String(seed ?? "tunehub")) ^ hashString(label)) >>> 0;
 }
 
+// 模态参数是基于公开手碟物理模型的通用近似，不复用其源码或参数表。
+// ratio 取接近 1:2:3 的主模态；少量 Hz 的伴随模态提供自然拍频。
+const HANDPAN_MODAL_PATCHES = {
+  handpanTone: {
+    gain: 0.9,
+    contactSeconds: 0.001,
+    modes: [
+      { ratio: 1, gain: 0.9, t60: 3.2 },
+      { ratio: 1, offset: 1.1, gain: 0.13, t60: 2.1 },
+      { ratio: 2, gain: 0.52, t60: 2.5 },
+      { ratio: 2, offset: 1.6, gain: 0.13, t60: 1.9 },
+      { ratio: 3, gain: 0.4, t60: 2.5 },
+      { ratio: 3, offset: -2.2, gain: 0.1, t60: 1.9 },
+      { ratio: 3.98, gain: 0.12, t60: 0.36 },
+      { ratio: 5.9, gain: 0.18, t60: 0.32 },
+      { ratio: 7.4, gain: 0.1, t60: 0.27 },
+    ],
+  },
+  handpanBass: {
+    gain: 0.82,
+    // Ding 的接触力仍是圆顶脉冲；过长的接触会在激励阶段滤掉二、三倍频。
+    contactSeconds: 0.003,
+    modes: [
+      { frequency: 85, gain: 0.1, t60: 1.5 },
+      { ratio: 1, gain: 0.86, t60: 1.8 },
+      { ratio: 1, offset: 1.1, gain: 0.18, t60: 1.25 },
+      { ratio: 2, gain: 0.85, t60: 2.2 },
+      { ratio: 2, offset: 1.6, gain: 0.16, t60: 1.8 },
+      { ratio: 3, gain: 0.65, t60: 3 },
+      { ratio: 3, offset: -2.2, gain: 0.12, t60: 2.3 },
+      { ratio: 3.98, gain: 0.09, t60: 0.24 },
+    ],
+  },
+  handpanDing: {
+    gain: 0.84,
+    contactSeconds: 0.006,
+    modes: [
+      { ratio: 1, gain: 0.82, t60: 0.78 },
+      { ratio: 1, offset: 1.1, gain: 0.18, t60: 0.62 },
+      { ratio: 2, gain: 0.62, t60: 0.64 },
+      { ratio: 2, offset: 1.6, gain: 0.15, t60: 0.52 },
+      { ratio: 3, gain: 0.48, t60: 0.42 },
+      { ratio: 3, offset: -2.2, gain: 0.12, t60: 0.32 },
+      { ratio: 3.98, gain: 0.13, t60: 0.2 },
+      { ratio: 5.9, gain: 0.05, t60: 0.1, gate: 0.5 },
+    ],
+  },
+  handpanEdge: {
+    gain: 0.62,
+    contactSeconds: 0.0045,
+    modes: [
+      { ratio: 1, gain: 0.48, t60: 0.48 },
+      { ratio: 1, offset: 1.1, gain: 0.12, t60: 0.4 },
+      { ratio: 2, gain: 0.5, t60: 0.42 },
+      { ratio: 2, offset: 1.6, gain: 0.15, t60: 0.34 },
+      { ratio: 3, gain: 0.42, t60: 0.3 },
+      { ratio: 3, offset: -2.2, gain: 0.12, t60: 0.24 },
+      { ratio: 3.98, gain: 0.15, t60: 0.16 },
+      { ratio: 5.9, gain: 0.06, t60: 0.08, gate: 0.52 },
+    ],
+  },
+  handpanGhost: {
+    gain: 0.52,
+    contactSeconds: 0.008,
+    modes: [
+      { ratio: 1, gain: 0.92, t60: 0.52 },
+      { ratio: 1, offset: 1.1, gain: 0.14, t60: 0.42 },
+      { ratio: 2, gain: 0.32, t60: 0.4 },
+      { ratio: 2, offset: 1.6, gain: 0.08, t60: 0.32 },
+      { ratio: 3, gain: 0.16, t60: 0.26 },
+      { ratio: 3, offset: -2.2, gain: 0.04, t60: 0.2 },
+    ],
+  },
+};
+
+// 固定 D 大调示例琴的弱琴体耦合：被击中的音区会带动同一琴壳上的邻近音区。
+// 只给已对照过的 A3、D4、E4 加入低电平共振，避免凭空生成不在音列中的音。
+const HANDPAN_TONE_COUPLING = {
+  57: [{ frequency: 293.66, gain: 0.025, t60: 1.1 }, { frequency: 90, gain: 0.019, t60: 0.9 }],
+  62: [{ frequency: 220, gain: 0.07, t60: 0.9 }],
+  64: [{ frequency: 293.66, gain: 0.035, t60: 0.9 }, { frequency: 220, gain: 0.05, t60: 0.9 }],
+};
+
+/** 真实单音的低场音更偏基音；随音区升高，倍频更容易被激发。 */
+function handpanModeGain(patch, mode, pitch) {
+  if (patch !== HANDPAN_MODAL_PATCHES.handpanTone) return 1;
+  const register = Math.max(0, Math.min(1, (pitch - 220) / 110));
+  const order = mode.ratio ?? 1;
+  if (order >= 3.9) return 0.4 + register * 0.6;
+  // 真实琴的上部模态早期较柔和，随后才显出金属余振；
+  // 降低初始激励并减少这些模态的阻尼，比延长整条音符更接近这种演化。
+  if (order >= 2.9) return (0.052 + register * 1.05) * 0.4;
+  if (order >= 1.9) return (0.092 + register * 0.38) * 0.5;
+  return 1;
+}
+
+/** 场音的基音尾音随音高略缩短；把最长衰减留给低场音。 */
+function handpanModeT60(patch, mode, pitch) {
+  if (patch !== HANDPAN_MODAL_PATCHES.handpanTone) return mode.t60;
+  if (mode.ratio !== 1) return mode.t60;
+  const register = Math.max(0, Math.min(1, (pitch - 220) / 110));
+  return mode.offset ? mode.t60 - register * 0.35 : mode.t60 - register * 0.55;
+}
+
+/** 用圆顶包络的短促接触力激发并行共振模态，保留轻微的表面纹理。 */
+function playHandpanModal(ctx, destination, event, startTime, noiseSeed) {
+  const patch = HANDPAN_MODAL_PATCHES[event.timbre];
+  if (!patch) return false;
+
+  const velocity = Math.max(0.02, Math.min(1, event.velocity));
+  const hitTime = event.time ?? event.startTime ?? startTime;
+  const seed = seedBase(
+    `${noiseSeed}|${event.timbre}|${event.midi}|${hitTime.toFixed(4)}`,
+    "handpan-pluck",
+  );
+  // 接触时长改变激励脉冲的频谱；每次击奏可以不同，但不改琴体固有的音高与余振。
+  const contactScale = Number.isFinite(event.contactScale)
+    ? Math.max(0.65, Math.min(1.5, event.contactScale))
+    : 1;
+  const contactSeconds = patch.contactSeconds * contactScale;
+  const pulseSeconds = contactSeconds;
+  const strikePosition = Math.max(0, Math.min(1, event.strikePosition ?? 0.42));
+  const brightness = Math.max(0, Math.min(1, event.toneBrightness ?? 0.56));
+  const length = Math.max(1, Math.floor(ctx.sampleRate * pulseSeconds));
+  const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
+  const samples = buffer.getChannelData(0);
+  for (let i = 0; i < length; i++) {
+    const progress = (i + 0.5) / length;
+    const roundEnvelope = Math.sin(Math.PI * progress) ** 2;
+    // 手指接触力主要是单向、平滑的脉冲；轻微纹理保留拨动金属表面的触感。
+    // 纯随机噪声在仅数毫秒内会偶然抵消某些基音，使相邻音区像不同乐器。
+    samples[i] = (0.8 + 0.2 * (detNoise32(seed + i) * 2 - 1)) * roundEnvelope;
+  }
+
+  const source = ctx.createBufferSource();
+  source.buffer = buffer;
+  const exciter = ctx.createGain();
+  exciter.gain.value = 28 * patch.gain * Math.pow(velocity, 1.18);
+  source.connect(exciter);
+
+  // 短激励源结束后，浏览器可能提前停止上游静默的 Biquad 处理。
+  // 保持零输入到模态衰减完成，才能听到琴体自身的尾音。
+  const ringSource = ctx.createBufferSource();
+  ringSource.buffer = ctx.createBuffer(1, 1, ctx.sampleRate);
+  ringSource.loop = true;
+  ringSource.connect(exciter);
+
+  const pitch = midiToHz(event.midi);
+  const modalMix = ctx.createGain();
+  modalMix.gain.value = 1;
+  modalMix.connect(destination);
+  const modes = patch === HANDPAN_MODAL_PATCHES.handpanTone
+    ? [...patch.modes, ...(HANDPAN_TONE_COUPLING[event.midi] ?? [])]
+    : patch.modes;
+  for (const mode of modes) {
+    if (mode.gate && velocity < mode.gate) continue;
+    const frequency = mode.frequency ?? pitch * (mode.ratio ?? 1) + (mode.offset ?? 0);
+    if (frequency < 30 || frequency > ctx.sampleRate * 0.45) continue;
+
+    const resonator = ctx.createBiquadFilter();
+    resonator.type = "bandpass";
+    resonator.frequency.value = frequency;
+    // Q 对应每个模态各自的衰减时间，而非整颗音符共用一个尾音包络。
+    const t60 = handpanModeT60(patch, mode, pitch);
+    // Q 随频率增大；固定封顶 500 会把 D4/E4 的高阶模态硬截成短尾音。
+    // 此处由模态 T60 换算 Q，4k 只防御异常输入，不参与正常手碟音区。
+    resonator.Q.value = Math.max(2, Math.min(4000, Math.PI * frequency * t60 / Math.log(1000)));
+    const modeGain = ctx.createGain();
+    const gate = mode.gate
+      ? Math.pow((velocity - mode.gate) / (1 - mode.gate), 1.4)
+      : 1;
+    // 外缘触弦相对更容易激发高阶模态；位置影响限制在小范围内，避免变成音高滤波效果。
+    const modalOrder = Math.max(0, Math.log2(frequency / pitch));
+    const brightnessResponse = 1 + (brightness - 0.56) * 0.9 * Math.min(1, modalOrder / 2);
+    const positionResponse = Math.max(
+      0.72,
+      Math.min(1.2, 1 + (strikePosition - 0.42) * (0.18 + modalOrder * 0.42)),
+    );
+    modeGain.gain.value = mode.gain * handpanModeGain(patch, mode, pitch) * gate * brightnessResponse * positionResponse;
+    exciter.connect(resonator);
+    resonator.connect(modeGain);
+    modeGain.connect(modalMix);
+  }
+
+  source.start(startTime);
+  source.stop(startTime + pulseSeconds + 0.001);
+  const ringSeconds = Math.max(...modes.map((mode) => handpanModeT60(patch, mode, pitch))) * 2;
+  ringSource.start(startTime);
+  ringSource.stop(startTime + ringSeconds);
+  return true;
+}
+
 // ---------------------------------------------------------------------------
 // 程序生成的混响 IR（零版权风险、可参数化、且确定性）
 // ---------------------------------------------------------------------------
@@ -506,6 +698,7 @@ export function playNoteOn(ctx, destination, event, noiseSeed = "tunehub") {
     playPercOn(ctx, destination, event, t, noiseSeed);
     return;
   }
+  if (playHandpanModal(ctx, destination, event, t, noiseSeed)) return;
 
   const voiceGain = ctx.createGain();
   voiceGain.gain.value = 0;
@@ -643,6 +836,7 @@ export function buildMasterBus(
     reverbBrightness = 0.32,
     volume = 0.85,
     seed = "tunehub",
+    analyse = false,
   } = {},
 ) {
   const input = ctx.createGain();
@@ -684,6 +878,15 @@ export function buildMasterBus(
   const master = ctx.createGain();
   master.gain.value = volume;
 
+  let analyser = null;
+  if (analyse) {
+    analyser = ctx.createAnalyser();
+    analyser.fftSize = 8192;
+    analyser.smoothingTimeConstant = 0.78;
+    analyser.minDecibels = -112;
+    analyser.maxDecibels = -24;
+  }
+
   input.connect(dry);
   dry.connect(comp);
   input.connect(convolver);
@@ -692,9 +895,14 @@ export function buildMasterBus(
   wet.connect(comp);
   comp.connect(limiter);
   limiter.connect(master);
-  master.connect(ctx.destination);
+  if (analyser) {
+    master.connect(analyser);
+    analyser.connect(ctx.destination);
+  } else {
+    master.connect(ctx.destination);
+  }
 
-  return { input, master, comp, limiter, convolver };
+  return { input, master, comp, limiter, convolver, analyser };
 }
 
 // ---------------------------------------------------------------------------
