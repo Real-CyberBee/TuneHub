@@ -194,6 +194,13 @@ def ensure_cdn_behavior(domain: str, cert_id: str | None) -> None:
                 }
             ],
         },
+        # PWA 需要安全上下文：Service Worker 只在 HTTPS（或 localhost）下注册。
+        # 明文 HTTP 一律 301 到 HTTPS，避免用户装了"半个"应用。
+        "ForceRedirect": {
+            "Switch": "on",
+            "RedirectType": "https",
+            "RedirectStatusCode": 301,
+        },
     }
     if cert_id:
         payload["Https"] = {
