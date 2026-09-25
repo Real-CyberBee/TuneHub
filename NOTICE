@@ -15,10 +15,8 @@ APIs and ES modules.
 Development and test tools not distributed with this project:
   - Node.js (used to run tests and the local static server)
 
-Archived content:
-  - prototype/original-demo.html is the project's starting example. It is not
-    original TuneHub code and is retained for historical reference only; it is
-    not part of the distributed product.
+Historical prototype code whose source license could not be verified has been
+excluded from this repository and its Git history.
 
 Third-party projects mentioned in docs/archive/ (including Tone.js,
 sonic-weave, Strudel, Scale Workshop, and generative.fm) have not been copied

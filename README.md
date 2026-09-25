@@ -1,96 +1,30 @@
-# TuneHub: Ambient Electronic Music Studio
+# TuneHub: Ambient Music Studio
 
-[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![No runtime dependencies](https://img.shields.io/badge/runtime%20dependencies-0-brightgreen.svg)](#run-locally)
-[![Tests](https://img.shields.io/badge/tests-52%20passing-brightgreen.svg)](#verification)
+[简体中文](docs/zh-CN/README.md)
 
-> **Make ambient electronic music in a few clicks.** An open-source, browser-first music generation studio.
->
-> Chinese documentation:(docs/zh-CN/README.md)。
+TuneHub is an open-source, browser-based studio for creating ambient music. Explore musical ideas by listening and playing—no music theory required.
 
 ![TuneHub interface](docs/screenshot.png)
 
-## Features
+## Open TuneHub
 
-TuneHub opens with a complete piece and is designed for people without music theory knowledge.
-
-| Action | Result |
-|---|---|
-| Press **Play** | Listen to the current piece. |
-| Adjust **mood, energy, and tempo** | Regenerate immediately with updated musical character. |
-| Select a listening scene | Generate scene-specific ambient electronic music. |
-| Press **Reroll** | Create a new piece while keeping locked parts unchanged. |
-| Mute or lock a part | Keep the parts you like and regenerate the rest. |
-| Change scale | Hear a different scale with the same seed. |
-| Copy a share link | Share the complete piece state; no server is required. |
-| Export WAV, stems, MIDI, or Score | Render audio or take the piece into a DAW and other tools. |
-| Enable endless mode | Continue with reproducible segments scheduled without playback gaps. |
-
-## Run locally
+From the project directory, run:
 
 ```bash
 python3 serve.py
 ```
 
-Then open <http://127.0.0.1:8765/>. A local server is required because the app uses ES modules; opening `index.html` with `file://` is blocked by browser CORS rules.
+Then open <http://127.0.0.1:8765/> in your browser. TuneHub needs a local server to load its JavaScript modules; there is no build or install step.
 
-The application has no build step or runtime dependencies. It uses native ES modules and Web Audio.
+<details>
+<summary>Why I made TuneHub</summary>
 
-## Verification
+This project began on a whim. I’m a software engineer, and I’ve loved instrumental music since I was a child—from Bandari and Secret Garden to Ryuichi Sakamoto and Roc Chen (A Kun), from FKJ to Hans Zimmer, from Audiomachine to David Garrett. This music has helped me think and kept me company as I fell asleep. But I know very little about music. I tried to learn, without much success. Large music-generation models have given more people the chance to create songs, but they haven’t quite met what I’m looking for: I don’t only want to hear the music I have in mind; I also want to enjoy making it—playing with music.
 
-```bash
-node --test 'tests/*.test.mjs'
-node tests/run-browser-check.mjs http://127.0.0.1:8765
-```
+I was building a tower-defense game where every tower attack would generate a note. When dozens of towers attacked at once, the sound became a jumble. I asked AI whether an algorithm could turn those scattered notes into music. After some work, it gave me music-theory terms I couldn’t understand and a demo. I opened the HTML file and found that random notes really could become music. I couldn’t wait to share it with my friends, and they liked it too. I felt I might have found a way for people with little musical knowledge to take part in making music, and the outline of a project began to form in my mind. Generative music has been around for a long time, but with AI’s help, this approach might become practical—not only for software engineers who don’t know music theory, but also for musicians who do.
 
-The browser checks exercise paths that Node alone cannot cover: `OfflineAudioContext` range rendering, WAV encoding and decoding, audible realtime playback, and range slicing. The check page is also available at <http://127.0.0.1:8765/tests/browser.html>.
+I’ve listened to instrumental music for 15 years and explored many kinds. I know today’s random music generators still have a long way to go before they can reach their full potential.
 
-## How generation stays musical
+Finally, I want to mention the film *Les Choristes* (*The Chorus*). It showed me how music can bring people together, bridge divides, and heal. Our world has too much conflict, mistrust, and exploitation. I hope this project can encourage people to create and share.
 
-Uniformly random parameters tend to create register clashes, dissonant collisions, and uncontrolled density. TuneHub constrains generation from the start:
-
-- Weighted interval selection favors fifths, fourths, thirds, and sixths while greatly reducing seconds, tritones, and major sevenths.
-- Strict registers separate bass, harmony, and melody.
-- Each part receives an independent random stream, so changing one part does not perturb the others.
-- A multi-section form, density envelopes, and gradual tonal movement provide large-scale shape.
-- A mix chain provides bus compression, limiting, per-part filtering, and deterministic convolution reverb.
-
-The displayed musicality score summarizes weighted dissonant collisions, density spikes, and unison collisions. Kernel tests evaluate fixed seeds and musical constraints; a score is a heuristic, not a substitute for listening studies.
-
-## Architecture
-
-```text
-src/core/     Deterministic generation with no DOM or audio dependency
-src/audio/    Native Web Audio playback, rendering, and export adapters
-src/content/  Versioned, reviewed content packs and registry
-src/ui/       Interface and user actions
-```
-
-The core avoids unseeded `Math.random()`, schedules sound against the audio clock rather than `setTimeout`, and derives noise from seeds. A shareable piece is represented by its seed, configuration, and part-seed overrides.
-
-Content can use typed static definitions or code when musical behavior needs to coordinate melody, rhythm, ornamentation, and playing technique. Part is an arrangement role; instrument describes playable capabilities and sound implementation; timbre is a specific sound choice. JSON remains an import/export format. See the [architecture](docs/ARCHITECTURE.md) and [content-pack guide](docs/CONTENT_PACKS.md).
-
-## Repository map
-
-```text
-index.html                   Browser application
-serve.py                     Local static server
-src/core/                    Generation, model, and reproducible session logic
-src/audio/                   Web Audio, playback, and export formats
-src/content/                 Built-in content packs and registry
-src/ui/                      Interface and styles
-tests/                       Kernel, audio, and browser checks
-docs/                        English product and technical documentation
-docs/zh-CN/                  Chinese translations
-docs/archive/                Historical research notes
-examples/                    Legacy JSON examples and validator
-prototype/                   Read-only original demo
-```
-
-## Current limitations
-
-The MVP includes deterministic generation, scene-based ambient electronic music, endless playback, and WAV, stems, MIDI, and Score exports. The broader content-pack authoring workflow, AI/MCP server, first game, and advanced tuning interface remain future work. The generator currently has a small sound palette and has not been validated through formal blind listening studies. See the [roadmap](docs/ROADMAP.md).
-
-## Decisions and license
-
-The project is licensed under [Apache License 2.0](LICENSE) (see also [NOTICE](NOTICE)). Runtime code has no third-party dependencies. `prototype/original-demo.html` is a historical starting point and is not original TuneHub code.
+</details>
