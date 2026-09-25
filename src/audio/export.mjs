@@ -120,6 +120,19 @@ export async function exportWav(events, opts = {}, filename = 'tunehub.wav') {
   return blob;
 }
 
+/** 按 Part/声部离线渲染 WAV 分轨，供任意 DAW 继续编辑。 */
+export async function exportStems(events, opts = {}, prefix = 'tunehub') {
+  const voices = [...new Set(events.map((event) => event.voice ?? event.partId).filter(Boolean))];
+  const blobs = {};
+  for (const voice of voices) {
+    const buffer = await renderRange(events.filter((event) => (event.voice ?? event.partId) === voice), opts);
+    const blob = encodeWav(buffer);
+    triggerDownload(blob, `${prefix}-${voice}.wav`);
+    blobs[voice] = blob;
+  }
+  return blobs;
+}
+
 export function triggerDownload(blob, filename) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

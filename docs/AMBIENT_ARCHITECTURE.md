@@ -1,0 +1,58 @@
+# Ambient Electronic Music Pilot Architecture
+
+> **English summary:** This document describes TuneHub’s first complete ambient electronic music slice: curated listening scenes feed deterministic generation, then a continuously extendable playback timeline. The implementation keeps content selection separate from generation and audio scheduling.
+>
+> **中文补充：** 本文说明 TuneHub 首个氛围电子音乐纵向切片的架构边界与实现方式。
+
+## 中文详细说明 / Chinese details
+
+
+氛围电子音乐是 TuneHub 第一个完整的“内容 → 生成 → 播放形态”纵向切片。它既是可直接使用的场景音乐入口，也是后续风格、游戏、AI 或社区内容包接入时可复用的模板。
+
+## 目标与边界
+
+- 用户从阅读、做家务、吃饭、开车、休息、派对、运动、视频配乐等**场景**开始，而不是面对一组抽象参数。
+- 场景只提供策展过的内容元数据和生成配置；音符生成仍由 `src/core/generate.mjs` 负责。
+- 无尽模式必须可复现、可提前调度、不能在片段边界 stop/play 产生间隙。
+- 不新增依赖，不把 DOM、AudioContext 或墙钟时间引入 core。
+
+## 模块职责
+
+```
+src/core/ambient.mjs          场景内容注册表、场景配置、片段种子与时间线拼接
+          │
+          ▼
+src/core/generate.mjs         确定性生成 NoteEvent[]、听感指标、段落长度
+          │
+          ▼
+src/audio/player.mjs          调度单条可增长的时间线；extend 只接受未来追加
+          │
+          ▼
+src/ui/app.mjs                场景选择、参数微调、无尽开关、分享链接与可视化
+```
+
+`AMBIENT_SCENES` 是当前内容注册表。每个场景具有稳定 `id`、展示元数据、标签和生成层公开配置；它不包含 UI 回调或音频实现。`ambientConfig()` 总是返回深拷贝，避免用户微调污染注册内容。
+
+## 确定性的无尽会话
+
+分享状态记录基础 `seed`、场景 `a`、参数和无尽开关 `x`。第 `n` 段的种子规则为：
+
+```
+n = 0: baseSeed
+n > 0: `${baseSeed}:${sceneId}:${n}`
+```
+
+因此同一链接总能得到同一场景轨迹，但不同片段仍有变化。每段最多还会从该片段种子派生 8 个 `take`，选择首个 `good` 结果（没有 `good` 时选择听感分最高的结果）；这个选择同样是纯确定性的，避免将已知的 `poor` 片段交给用户。UI 在剩余 12 秒时生成下一段，`appendAmbientSegment()` 将其事件时间整体后移并返回新时间线，随后由 `Player.extend()` 交换未来事件列表。已经排进 Web Audio 图的前缀不会被改写，下一段也会在结束前进入调度窗口。
+
+关闭无尽模式不会截断已经排入的声音；当前时间线自然播放结束。
+
+## 复用这个模板
+
+新的内容形态应优先遵循：
+
+1. 定义稳定内容 ID 与可审查的元数据/配置，不把业务判断放进 UI。
+2. 将内容配置送入纯生成器，保持“种子 + 配置 = 作品”。
+3. 若需要持续播放，使用确定性片段索引和只追加的时间线，不依赖 `setTimeout` 或随机续写。
+4. 为内容覆盖范围、确定性和时间线拼接写内核测试；为真实声学路径保留浏览器自检。
+
+这不是对通用内容包接口的最终冻结：传统音乐或动态生成器可能需要联合表达节奏、装饰与奏法。氛围场景证明的是最小稳定契约——内容可被选择、配置可被生成器消费、输出可被连续播放。

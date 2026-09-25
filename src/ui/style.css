@@ -66,36 +66,65 @@ header { text-align: center; }
   letter-spacing: 0.5px;
 }
 
-/* ---------- 预设卡片 ---------- */
-.presets {
+/* ---------- 氛围场景 ---------- */
+.ambient-picker {
   display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  padding: 2px 0 4px;
-  scrollbar-width: none;
+  flex-direction: column;
+  gap: 10px;
 }
-.presets::-webkit-scrollbar { display: none; }
-
-.preset {
-  flex: 0 0 auto;
-  padding: 8px 14px;
-  border-radius: 999px;
-  border: 1px solid var(--line);
+.section-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
+}
+.eyebrow {
+  margin: 0 0 3px;
+  color: var(--accent);
+  font-size: 10px;
+  letter-spacing: 1.7px;
+  text-transform: uppercase;
+}
+.section-heading h2 {
+  margin: 0;
+  font-size: 17px;
+  letter-spacing: 0.2px;
+}
+.scene-status {
+  max-width: 330px;
+  margin: 0;
+  color: var(--dim);
+  font-size: 11.5px;
+  line-height: 1.45;
+  text-align: right;
+}
+.scenes {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.scene {
+  min-width: 0;
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px;
+  border-radius: 10px;
   background: var(--panel);
   color: var(--dim);
-  font-size: 13px;
-  font-family: inherit;
-  cursor: pointer;
-  transition: all 0.18s ease;
-  white-space: nowrap;
+  text-align: left;
 }
-.preset:hover { color: var(--text); border-color: rgba(255, 255, 255, 0.18); }
-.preset.active {
-  background: var(--accent);
+.scene:hover { color: var(--text); border-color: rgba(255, 255, 255, 0.2); }
+.scene.active {
   border-color: var(--accent);
-  color: #10121a;
-  font-weight: 600;
+  background: linear-gradient(135deg, var(--accent-dim), rgba(255, 209, 102, 0.04));
+  color: var(--text);
 }
+.scene-icon { font-size: 20px; line-height: 1; }
+.scene-copy { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.scene-copy b { font-size: 12px; font-weight: 650; }
+.scene-copy small { overflow: hidden; color: var(--dimmer); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ---------- 舞台 ---------- */
 .stage {
@@ -206,6 +235,13 @@ button.primary {
 }
 button.primary:hover { filter: brightness(1.07); background: var(--accent); }
 
+button.endless { color: var(--dim); }
+button.endless.active {
+  border-color: var(--harmony);
+  background: rgba(78, 205, 196, 0.12);
+  color: var(--harmony);
+}
+
 button:disabled { opacity: 0.45; cursor: progress; }
 
 /* ---------- 声部 ---------- */
@@ -272,5 +308,8 @@ button.ghost:hover { color: var(--text); }
   button { padding: 9px 14px; font-size: 13px; }
   button.primary { min-width: 92px; }
   .voices { grid-template-columns: repeat(2, 1fr); }
+  .scenes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .section-heading { align-items: start; flex-direction: column; gap: 4px; }
+  .scene-status { max-width: none; text-align: left; }
   .brand h1 { font-size: 22px; }
 }

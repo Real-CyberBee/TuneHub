@@ -18,7 +18,16 @@
     <p class="tagline">点几下，就有音乐</p>
   </header>
 
-  <section class="presets" id="presets" aria-label="预设"></section>
+  <section class="ambient-picker" aria-labelledby="ambientTitle">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Ambient Electronic · Scene Radio</p>
+        <h2 id="ambientTitle">Where are you listening?</h2>
+      </div>
+      <p id="sceneStatus" class="scene-status" aria-live="polite"></p>
+    </div>
+    <div class="scenes" id="scenes" aria-label="氛围电子音乐场景 Ambient electronic music scenes"></div>
+  </section>
 
   <section class="stage">
     <canvas id="viz" aria-label="音符可视化"></canvas>
@@ -50,6 +59,7 @@
 
     <div class="actions">
       <button id="playBtn" class="primary">▶ 播放</button>
+      <button id="endlessBtn" class="endless" aria-pressed="false" title="片段结束前自动续写下一段，不中断播放">∞ 无尽模式</button>
       <button id="rerollBtn" title="换一个（保留锁定的声部）">🎲 换一个</button>
       <button id="scaleBtn" title="换一种音阶（同一个种子）">🎼 换音阶</button>
     </div>
@@ -61,6 +71,9 @@
     <div class="row">
       <button id="shareBtn" class="ghost">🔗 复制分享链接</button>
       <button id="exportBtn" class="ghost">⬇ 导出 WAV</button>
+      <button id="stemsBtn" class="ghost" title="按声部导出可在 DAW 中独立编辑的 WAV 分轨">⬇ 导出 Stems</button>
+      <button id="midiBtn" class="ghost" title="导出可编辑的 Standard MIDI File">♫ 导出 MIDI</button>
+      <button id="scoreBtn" class="ghost" title="导出包含内容引用与微分音信息的无损 Score">▤ 导出 Score</button>
       <button id="offlineBtn" class="ghost" title="从种子重新渲染，验证离线路径与实时播放一致">♻ 离线重渲染 10 秒</button>
     </div>
     <p class="hint" id="hint">

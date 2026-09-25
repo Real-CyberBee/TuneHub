@@ -1,6 +1,6 @@
 # TuneHub · 架构
 
-> 三条主线：**内核薄而深**、**贡献写数据**、**所有形态走同一条 Action 通道**。
+> 三条主线：**内核薄而深**、**内容按需用数据或代码表达**、**所有形态走同一条 Action 通道**。
 
 ---
 
@@ -16,8 +16,8 @@
 │ L3 可视化 Visualizers   纯函数 (乐谱, 环境) → 渲染          │
 └──────────────────────────┬───────────────────────────────┘
 ┌──────────────────────────▼───────────────────────────────┐
-│ L2 数据 Content   ★ 社区贡献主战场（声明式，无需写代码）     │
-│    律制 │ 音阶 │ 框架 │ 节奏 │ 风格 │ 音色 │ 主题           │
+│ L2 内容包 Content ★ 社区扩展主战场（素材 + 代码生成器）    │
+│    律制 │ 音阶 │ 框架/节奏 │ 风格 │ 乐器 │ 音色 │ 主题      │
 └──────────────────────────┬───────────────────────────────┘
 ┌──────────────────────────▼───────────────────────────────┐
 │ L1 内核 Kernel   机制。稳定、极小、<3000 行、零运行时依赖    │
@@ -28,7 +28,7 @@
 
 **不变式**
 - L1 公共 API 遵循严格语义化版本，破坏性变更走 RFC
-- L2 是数据，**不发版**
+- L2 内容包可独立于 L1 发布；稳定 ID 与版本用于兼容和复现
 - L4 每个形态独立发版，互不阻塞
 - L2 与 L4 之间无直接依赖，都只依赖 L1
 
@@ -49,28 +49,20 @@ type Pitch =
 > **一旦把音高退化成正整数，就永久失去了表达中立三度、纯律比例、甘美兰的能力。**
 > UI 可以显示成音符号，内核不能。
 
-### 2.2 三个正交层：律制 / 音阶 / 框架
+### 2.2 律制、音阶、框架与节奏
 
 ```
-律制 Tuning     频率如何生成    （等分 / 比例 / 实测）
-  ↓
-音阶 Scale      取哪些音级
-  ↓
-框架 Framework  这些音级怎么用   （上行下行 / 重点音 / 惯用乐句）
+律制 Tuning       音高如何映射为频率       （等分 / 比例 / 实测）
+音阶 Scale        可供使用的音高集合
+框架 Framework    音高如何用于旋律与乐句   （上行下行 / 重点音 / 特征乐句）
+节奏 Rhythm       声音如何安排在时间中     （拍点 / 循环 / 重音）
 ```
 
-**为什么必须拆**：拉格和木卡姆规定的是**行为**，不是音高集合。
-把 `pakad`（特征乐句）塞进"音阶"数组里，就永远做不出能听的生成器。
+这些名称用于讨论不同的音乐问题，不代表它们彼此正交，也不要求注册接口一一对应。律制和音阶常可独立复用；框架、节奏、装饰和奏法则可能互相影响。拉格、木卡姆等生成器可以在同一段代码里共同处理这些关系。
 
-| 框架层字段（示例） | 含义 |
-|---|---|
-| `ascending` / `descending` | aroha / avaroha（拉格两者常不同） |
-| `emphasis` | vadi/samvadi/durak（重点音权重） |
-| `phrases` | pakad / 惯用乐句 |
-| `direction` | seyir（旋律行进性格） |
-| `cadence` | 终止式倾向 |
+只有当某份音阶、节奏型、乐句或音色确实能被多个生成器独立复用时，才需要将它抽成单独素材。框架和节奏仍是有用的音乐术语，但不预设为独立扩展接口。
 
-> **定位提醒**：这三层是**架构能力**，不是产品卖点。M6 才做，且放在高级模式。
+> **定位提醒**：这些是理解音乐的常用分类，不是每种传统都必须遵循的固定分层。
 
 ### 2.3 作品 = 种子 + 配置 + 输入日志
 
@@ -99,43 +91,61 @@ type Piece = { seed: number; config: Config; inputLog: Action[] };
 
 ---
 
-## 3. 扩展点：8 个 `register*`
+## 3. 内容包与扩展接口
 
-```ts
-registerTuning / registerScale / registerFramework / registerRhythm
-registerStyle  / registerVoice / registerVisualizer / registerOperator
-```
+内容包可以包含律制、音阶、框架、节奏、风格、音色、主题等既有概念，但扩展接口不必与这些概念一一对应。具体接口数量与名称不预先冻结；代码生成器可以联合实现框架、节奏、装饰与奏法。
 
-- **前 7 个接受纯数据**（无需写代码），第 8 个是唯一的代码扩展点
-- **运行时注册**：支持从 URL 加载内容包（`?pack=`），无需重新构建
-- **命名空间与版本**：`id@version`，允许多版本并存（旧分享链接不失效）
-- **`paramsSchema`**：算子声明参数 schema 后，**UI 自动生成控件**——贡献者不写前端代码
+- 静态内容优先用 TypeScript 类型约束的常量表达；需要动态音乐行为时，扩展点可接受实现约定接口的代码模块
+- TypeScript 是作者侧的类型约束，不是运行时安全沙箱；内容模块需编译并通过审核。未经信任的代码不从任意 URL 自动执行
+- JSON 作为兼容的导入 / 导出格式保留；导入内容需运行时校验。它不限制内容包的权威源格式
+- 注册表按命名空间与 `id@version` 管理内容，允许多版本并存，避免同一作品在内容更新后悄然改变含义
+- 可选的风格预设可引用静态素材或代码生成器，为用户提供组合入口；它不是所有内容都必须经过的一层
 
 ### 3.1 贡献门槛梯度
 
-| 扩展点 | 贡献形态 | 门槛 |
+| 既有术语 | 可选表达方式 | 门槛 |
 |---|---|---|
-| 可视化 / 调音 / 音阶 / 节奏 | 纯数据 / 纯函数 | ★ |
-| **风格 Style Recipe** | **声明式配方** | ★★ |
-| 音色 | 参数配方 | ★★ |
+| 律制 / 音阶 / 乐器能力 / 音色 | 类型化常量；乐器关联声音实现 | ★ |
+| **框架 / 节奏 / 奏法** | 可由同一个代码生成器共同表达；只有需要复用时才分别抽出 | ★★ |
+| 风格预设（可选） | 类型化常量，引用素材与生成器 | ★ |
+| 可视化 / 算子 | 实现扩展接口的代码模块 | ★★ |
 | 形态（游戏/AI） | 独立应用 | ★★★ |
 
-**风格配方里一行算法都没有**——只引用其它数据和内置算子：
+代码生成器的接口应保持稳定和精简，同时允许实现把相关音乐维度放在一起决策：
 
-```jsonc
-{ "kind": "style", "data": {
-  "defaults": { "bpm": 108, "tuningId": "12-tet" },
-  "voices": [
-    { "id": "bass", "voiceRef": "sub-bass", "rhythmRef": "afrobeat-tresillo-16", "density": 0.35 },
-    { "id": "perc", "voiceRef": "noise-perc", "rhythmRef": "afrobeat-tresillo-16", "density": 0.9 }
+```ts
+export function generateBhairav(context: GeneratorContext, rng: SeededRandom): NoteEvent[] {
+  // 可在同一处协调上/下行、节拍位置、特征乐句与装饰音。
+  return generateBhairavPhrase(context, rng);
+}
+
+// 需要给用户一键选择时，再用轻量风格预设绑定生成器、音色与参数。
+export const afrobeatPreset = {
+  id: 'afrobeat-lab',
+  generator: 'afrobeat-generator',
+  parts: [
+    { id: 'bass', instrument: 'synth-bass', timbre: 'warm-sine' },
+    { id: 'perc', instrument: 'drum-machine', timbre: 'afro-kit' },
   ],
-  "structure": [ {"section":"intro","bars":8,"density":0.4}, {"section":"main","bars":24,"density":1.0} ],
-  "constraints": [ {"op":"quantizeTime","params":{"grid":"16n"}},
-                   {"op":"normalizeVelocity","params":{"curve":"inverseSqrt"}} ]
-}}
+  bpm: 108,
+} as const satisfies StylePreset;
 ```
 
-### 3.2 `provenance` 必填
+以上类型名和签名仅用于说明设计方向，尚未冻结。当前 MVP 的 `NoteEvent` 主要表达时间、音高、时值、力度与音色；扩展到具体传统时，还需用真实样例确认事件模型是否能表达所需的装饰和奏法。
+
+### 3.2 声部、乐器与音色
+
+| 概念 | 含义 | 例子 |
+|---|---|---|
+| 声部（Part） | 编曲中的角色或音乐线 | 低音、旋律、打击乐 |
+| 乐器（Instrument） | 可演奏能力，以及关联的发声实现 | 音域、复音能力、是否支持连续滑音；连接采样器或合成器 |
+| 音色（Timbre） | 乐器或发声实现采用的具体音质与配方 | 钢琴的柔和音色、合成低音的振荡器配方 |
+
+风格预设可把声部分配给乐器，并选择音色。生成代码可以读取乐器能力来决定写什么演奏事件；音频层再由对应的发声实现渲染这些事件。演奏规则和乐器能力会相互影响，但不必因此拆成固定的音乐学分类。
+
+当前 MVP 还没有完整的乐器定义：`NoteEvent.voice` 表示声部，`timbre` 字段表示音色标识，但有音高的事件目前仍按声部名查找 `PATCHES`。因此现有代码还把声部和音色选择耦合在一起。
+
+### 3.3 `provenance` 必填
 
 每个内容必须带出处、精确度、局限说明：
 
@@ -147,16 +157,16 @@ registerStyle  / registerVoice / registerVisualizer / registerOperator
 }
 ```
 
-> 把"学术诚信"从**产品文案**升级为**数据结构**——由 schema 强制、CI 拦截。
-> 无出处的音阶进不了库。同时自动满足界面上必须显示的"来源与偏离说明"。
+> 把"学术诚信"升级为**可检查的元数据**——类型辅助作者填写，运行时校验与 CI 拦截缺失项。
+> TypeScript 类型不能证明来源真实；引用和许可仍需人工核实。界面据此显示来源与偏离说明。
 
-### 3.3 沙箱
+### 3.4 沙箱
 
 | 风险 | 控制 |
 |---|---|
-| 恶意代码 | 可视化跑在 `<iframe sandbox>` / Worker；算子是纯函数（无 DOM） |
+| 第三方代码 | 代码扩展需审核；执行时通过受限接口调用，适用时放入 Worker / iframe；纯函数约定本身不构成安全沙箱 |
 | 性能拖垮页面 | 可视化声明性能预算，掉帧自动降级 |
-| 内容审核 | 数据包几乎无风险可开放；**代码包需审核或沙箱**（两条信任路径） |
+| 内容审核 | 静态常量易于静态检查；代码包需审核、依赖检查和性能验证 |
 
 ---
 
@@ -178,11 +188,14 @@ piece v1 seed=7f3a91c2
 tuning=12-tet  bpm=108  key=D  mood=0.35  energy=0.72
 structure: intro(8) main(24) break(8) main(16) outro(8)
 voices:
-  bass    [locked] style=sub-bass    density=0.35
-  harmony          style=e-piano-fm  density=0.45 framework=dorian-modal
-  melody           style=pluck       density=0.40 framework=pentatonic
-  perc             style=noise-perc  density=0.90 rhythm=tresillo-16
+  bass    [locked] instrument=synth-bass   timbre=warm-sine   density=0.35
+  harmony          instrument=keyboard    timbre=e-piano-fm  density=0.45
+  melody           instrument=plucked-synth timbre=pluck      density=0.40
+  perc             instrument=drum-machine timbre=afro-kit   density=0.90
+generator=bhairav-afrobeat
 ```
+
+`generator` 指向一个代码生成器；它可以在内部协调框架、节奏、装饰和奏法。若用户希望一键套用完整预设，Action 可另用 `applyStyle` 选择可选的风格预设。
 
 ```
 @action setParam key=energy value=0.72
@@ -231,18 +244,18 @@ DSL 头部带 `v1`；Action **只增不改**；未知 Action **必须拒绝并�
 
 ---
 
-## 6. 数据层与代码层物理分离
+## 6. 内容包与内核独立发布，许可按内容类型声明
 
 | | 仓库 | 许可 | 发版 |
 |---|---|---|---|
 | 源码 | `tunehub` | Apache-2.0 | 语义化版本 |
-| 内容 | `tunehub-content` | **逐条独立**（CC0/CC-BY/CC-BY-SA） | 持续更新 |
+| 内容包 | `tunehub-content` | 静态素材可逐条许可（CC0/CC-BY 等）；可执行模块使用明确的软件许可 | 独立版本，与内核解耦 |
 
-理由：音阶数据、田野测量、社区贡献的许可各不相同，混进代码仓库会造成许可证污染。
+理由：音阶数据、田野测量与社区贡献的许可可能不同，内容包可以独立发布和审查。类型化常量本身不决定许可；可执行模块必须标注软件许可，并纳入依赖与许可证检查。
 
 **数据来源注意**：Huygens-Fokker Scala 归档（只做解析器，**不打包文件**）；Xenharmonic Wiki（内容许可有传染性，与代码严格分离）；CompMusic / Saraga / Dunya（**研究用途，禁止再分发**，只引用测量数值并注明出处）。
 
-> **内容几乎无风险可开放，代码包需审核**——这正是"让扩展以数据为主"的另一个回报。
+> 静态素材便于审查和分发；可执行模块需额外审核。两种贡献都走内容包发布流程，但信任与许可要求不同。
 
 ---
 

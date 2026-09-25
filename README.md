@@ -1,17 +1,19 @@
-# TuneHub · 音枢
+# TuneHub · 音枢 | Ambient Electronic Music Studio
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![零依赖](https://img.shields.io/badge/dependencies-0-brightgreen.svg)](#跑起来)
 [![测试](https://img.shields.io/badge/tests-41%20%2B%2012%20passing-brightgreen.svg)](#验证)
 
-> **点几下，就有音乐。**
-> 开源的、浏览器优先的音乐生成实验室。
+> **Make ambient electronic music in a few clicks.**
+> An open-source, browser-first music generation studio.
+>
+> **中文补充：** 点几下，生成氛围电子音乐。TuneHub 是开源、浏览器优先的音乐生成实验室。
 
 ![界面](docs/screenshot.png)
 
 ---
 
-## 现在能做什么（MVP 已完成）
+## Features | 功能（中文说明见下文）
 
 打开就有一个 90 多秒的作品。**零音乐知识的人也能立刻用**：
 
@@ -93,14 +95,14 @@ src/ui/       界面：只负责画出来 + 把点击翻译成配置
 
 ## 已经预留但尚未接上的扩展点
 
-设计文档里规划了 8 个 `register*` 扩展点，让社区**主要写数据、不写代码**就能贡献：
+设计文档规划了内容注册机制，但扩展接口的数量与拆分方式尚未冻结。社区可以用类型化常量贡献静态素材，也可以用一个代码模块整体表达相互耦合的音乐行为：
 
 ```
-律制 tuning │ 音阶 scale │ 框架 framework │ 节奏 rhythm
-风格 style  │ 音色 voice │ 可视化 visualizer │ 算子 operator
+律制 │ 音阶 │ 框架/节奏/奏法 │ 可选风格预设
+声部 │ 乐器能力 │ 音色/主题素材 │ 可视化 visualizer │ 算子 operator
 ```
 
-MVP 里 `SCALES`、`PATCHES`（音色配方）、`RHYTHM_PATTERNS` 已经是**声明式数据表**，替换成注册表即可。
+`framework`、`rhythm`、装饰与奏法可以由同一个代码生成器共同处理；只有确有复用需要时才拆成独立素材。声部是编曲角色，乐器描述可演奏能力并关联发声实现，音色是具体的声音配方。MVP 里的 `SCALES`、`PATCHES` 与 `RHYTHM_PATTERNS` 仍是现有实现，不代表未来必须沿用同样的扩展分类；当前 `PATCHES` 还是音色配方，尚非完整乐器定义。JSON 保留为导入 / 导出兼容格式。
 
 `examples/` 里还有可运行的**内容包校验器**与 **AI 层回归测试集**（见下）。
 
@@ -134,7 +136,7 @@ MVP 里 `SCALES`、`PATCHES`（音色配方）、`RHYTHM_PATTERNS` 已经是**�
 - **M1 好听**：骨架已具备（悦耳度加权、音区隔离、混音链），但只有 4 种音色、没有人工盲测过的预设库
 - **M3 第一个游戏**：未做
 - **M2.5 AI / MCP Server**：未做。协议已在 `docs/ARCHITECTURE.md` §4 定义，但代码未写
-- **M4 内容生态**：内容包 schema 与校验器已在（见 `docs/archive`）但未接入本 MVP
+- **M4 内容生态**：早期 JSON 样板与校验器已在 `examples/`，未接入本 MVP；目标作者格式调整为类型化 TypeScript 内容包，JSON 保留为兼容导入 / 导出格式
 - **M6 律制层**：`Pitch` 抽象已留好（支持小数音符号），但只实现了 12-TET；`.scl` 解析、音分偏差可视化未做
 - **区间导出 UI**：导出引擎已支持任意 `[t1,t2]`，界面还只暴露"导出整首"
 
