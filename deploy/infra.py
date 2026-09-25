@@ -189,7 +189,9 @@ def ensure_cdn_behavior(domain: str, cert_id: str | None) -> None:
                     "Algorithms": ["gzip"],
                     "MinLength": 256,
                     "MaxLength": 2097152,
-                    "FileExtensions": ["js", "html", "css", "json", "svg", "webmanifest"],
+                    # mjs 一定要在列表里：整个应用都是 ES Module，
+                    # 只写 js 的话模块会以未压缩的形式发出去。
+                    "FileExtensions": ["mjs", "js", "html", "css", "json", "svg", "webmanifest", "xml", "txt"],
                     "RulePaths": [],
                 }
             ],
