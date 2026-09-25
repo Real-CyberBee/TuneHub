@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1719">
+  <title>How the Handpan Sound Works · TuneHub</title>
+  <link rel="stylesheet" href="./src/ui/handpan.css">
+  <link rel="stylesheet" href="./src/ui/handpan-guide.css">
+</head>
+<body>
+  <main class="handpan-app guide-app">
+    <header class="topbar">
+      <a class="back-link" id="guideBack" href="./handpan.html">← Handpan Solo</a>
+      <span class="pack-mark" id="handpanSeries">TUNEHUB · SOLO SERIES</span>
+      <button id="localeBtn" class="locale" type="button" title="Switch language to Chinese">中文</button>
+    </header>
+
+    <section class="guide-hero">
+      <p class="eyebrow" id="guideEyebrow">THE SOUND MODEL</p>
+      <h1 id="guideTitle">One touch. A whole instrument in motion.</h1>
+      <p id="guideIntro">Tap a note below. The rings follow the sound produced by the same engine as the solo page.</p>
+    </section>
+
+    <section class="guide-lab" id="guideLab" aria-label="Interactive handpan synthesis illustration">
+      <div class="guide-lab-top">
+        <span id="guideLiveLabel">LIVE MODAL MODEL</span>
+        <span id="guideLabHint">Tap the disk or the button</span>
+      </div>
+      <canvas id="guideViz" role="button" tabindex="0" aria-label="Tap the illustrated handpan to hear a synthesized note"></canvas>
+      <div class="guide-lab-bottom">
+        <div class="guide-note-picker" role="group" aria-label="Choose a handpan note">
+          <button class="note-button active" type="button" data-midi="50" aria-pressed="true">D3 Ding</button>
+          <button class="note-button" type="button" data-midi="57" aria-pressed="false">A3</button>
+          <button class="note-button" type="button" data-midi="62" aria-pressed="false">D4</button>
+          <button class="note-button" type="button" data-midi="64" aria-pressed="false">E4</button>
+        </div>
+        <button id="guideStrike" class="strike-button" type="button">✳ Tap the handpan</button>
+      </div>
+      <p class="guide-status" id="guideStatus" aria-live="polite">Choose a note and tap to hear the model.</p>
+    </section>
+
+    <section class="mode-panel" aria-labelledby="guideModesTitle">
+      <div class="mode-copy">
+        <div class="mode-heading">
+          <span class="eyebrow" id="guideModesEyebrow">WHAT IS RINGING?</span>
+          <h2 id="guideModesTitle">Three main vibrations</h2>
+        </div>
+        <p id="guideModesIntro">These bars read the live audio around the selected note's 1×, 2× and 3× frequencies.</p>
+      </div>
+      <div class="mode-meters">
+        <div class="mode-meter"><span class="mode-name" id="guideModeOne">1× · fundamental</span><div class="meter-track"><div id="modeOneBar" class="meter-fill"></div></div></div>
+        <div class="mode-meter"><span class="mode-name" id="guideModeTwo">2× · octave</span><div class="meter-track"><div id="modeTwoBar" class="meter-fill"></div></div></div>
+        <div class="mode-meter"><span class="mode-name" id="guideModeThree">3× · twelfth</span><div class="meter-track"><div id="modeThreeBar" class="meter-fill"></div></div></div>
+      </div>
+    </section>
+
+    <section class="guide-process" aria-labelledby="guideProcessTitle">
+      <p class="eyebrow" id="guideProcessEyebrow">FROM FINGER TO AIR</p>
+      <h2 id="guideProcessTitle">The three parts of a note</h2>
+      <div class="process-grid">
+        <article class="process-card">
+          <span class="step-number" id="guideStepContact">01 / CONTACT</span>
+          <svg class="step-art" viewBox="0 0 180 100" aria-hidden="true"><path class="art-axis" d="M8 82 H172"/><path class="art-pulse" d="M18 82 C55 82 58 18 90 18 S125 82 162 82"/></svg>
+          <h3 id="guideContactTitle">A rounded touch</h3>
+          <p id="guideContactBody">A short, smooth contact pulse starts the motion. Its duration and strike position change the mix of overtones.</p>
+          <small id="guideContactDetail">The pulse lasts roughly 1–8 ms, depending on the playing gesture.</small>
+        </article>
+        <article class="process-card">
+          <span class="step-number" id="guideStepPlate">02 / PLATE</span>
+          <svg class="step-art" viewBox="0 0 180 100" aria-hidden="true"><circle class="art-mode art-mode-one" cx="90" cy="50" r="15"/><circle class="art-mode art-mode-two" cx="90" cy="50" r="29"/><circle class="art-mode art-mode-three" cx="90" cy="50" r="43"/></svg>
+          <h3 id="guidePlateTitle">The metal keeps moving</h3>
+          <p id="guidePlateBody">Parallel resonators ring near the note's 1×, 2× and 3× frequencies. Each has its own damping, so the tone changes as it fades.</p>
+          <small id="guidePlateDetail">Slightly shifted partner modes create slow beating.</small>
+        </article>
+        <article class="process-card">
+          <span class="step-number" id="guideStepSpace">03 / SPACE</span>
+          <svg class="step-art" viewBox="0 0 180 100" aria-hidden="true"><circle class="art-space art-space-one" cx="90" cy="50" r="12"/><circle class="art-space art-space-two" cx="90" cy="50" r="29"/><circle class="art-space art-space-three" cx="90" cy="50" r="47"/></svg>
+          <h3 id="guideSpaceTitle">A little room around it</h3>
+          <p id="guideSpaceBody">Some notes gently wake nearby resonances. A short generated room response adds air after the metal's own ring.</p>
+          <small id="guideSpaceDetail">The long, pitched tail comes mainly from the resonators, not the room effect.</small>
+        </article>
+      </div>
+    </section>
+
+    <section class="guide-note">
+      <div><p class="eyebrow" id="guideMelodyEyebrow">AND THE MELODY?</p><h2 id="guideMelodyTitle">Variation with memory</h2></div>
+      <p id="guideMelodyBody">The generator remembers recent notes and develops short motives. It varies density, touch and breathing across a phrase, then chooses the next note within the instrument's note layout.</p>
+    </section>
+    <p class="guide-caveat" id="guideCaveat">This is a lightweight modal approximation, not a recording or a full simulation of a steel shell. Real handpans have more complex interactions than the model can capture.</p>
+    <a class="guide-return" id="guideReturn" href="./handpan.html">← Back to the solo</a>
+  </main>
+  <script type="module" src="./src/ui/handpan-guide.mjs"></script>
+</body>
+</html>

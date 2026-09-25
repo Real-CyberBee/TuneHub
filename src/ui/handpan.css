@@ -23,16 +23,18 @@ button { color: inherit; cursor: pointer; }
 .back-link { color: var(--dim); text-decoration: none; letter-spacing: 0; font: 12px "DM Sans", sans-serif; }
 .back-link:hover { color: var(--mint); }
 .pack-mark { color: #a6c4b4; }
-.top-note { letter-spacing: 0; font: 11px "DM Sans", sans-serif; }
+.top-actions { display: flex; align-items: center; gap: 14px; }
+.guide-link { color: var(--mint); text-decoration: none; font: 11px "DM Sans", sans-serif; letter-spacing: 0; white-space: nowrap; }
+.guide-link:hover { color: var(--gold); }
 button.locale { padding: 5px 8px; border: 1px solid var(--line); border-radius: 7px; background: rgba(19, 42, 41, .8); color: var(--dim); font: 10px "DM Sans", sans-serif; letter-spacing: 0; }
-.intro { text-align: center; padding: 50px 0 30px; }
+.intro { text-align: center; padding: 54px 0 30px; }
 .eyebrow { margin: 0 0 10px; color: var(--mint); font: 10px "DM Mono", monospace; letter-spacing: .2em; }
 h1 { margin: 0; font: 500 clamp(42px, 8vw, 64px)/1.1 "Noto Serif SC", serif; letter-spacing: .04em; }
 h1 span { color: var(--gold); font: 400 .58em "DM Sans", sans-serif; letter-spacing: .06em; }
 .intro h1 span:first-child { color: var(--text); font: inherit; letter-spacing: inherit; }
 .lede { margin: 14px 0 0; color: var(--dim); font: 14px "Noto Serif SC", serif; letter-spacing: .08em; }
-.sound-stage { position: relative; height: 320px; overflow: hidden; border: 1px solid var(--line); border-radius: 22px; background: linear-gradient(145deg, rgba(28, 59, 55, .78), rgba(9, 20, 23, .95)); box-shadow: 0 24px 75px rgba(0, 0, 0, .2); }
-.stage-glow { position: absolute; width: 330px; height: 230px; left: 50%; top: 48%; transform: translate(-50%, -50%); border-radius: 50%; background: rgba(138, 218, 177, .07); filter: blur(54px); pointer-events: none; }
+.sound-stage { position: relative; height: 420px; overflow: hidden; border: 1px solid var(--line); border-radius: 22px; background: linear-gradient(145deg, rgba(28, 59, 55, .78), rgba(9, 20, 23, .95)); box-shadow: 0 24px 75px rgba(0, 0, 0, .2); }
+.stage-glow { position: absolute; width: 390px; height: 390px; left: 50%; top: 50%; transform: translate(-50%, -50%); border-radius: 50%; background: rgba(138, 218, 177, .07); filter: blur(54px); pointer-events: none; }
 #viz { position: relative; display: block; width: 100%; height: 100%; }
 .stage-caption { position: absolute; left: 22px; right: 22px; bottom: 17px; display: flex; justify-content: space-between; color: #c3d4c9; font-size: 11px; pointer-events: none; }
 #scaleName { font-family: "DM Mono", monospace; color: var(--gold); }
@@ -49,11 +51,8 @@ h1 span { color: var(--gold); font: 400 .58em "DM Sans", sans-serif; letter-spac
 .endless-button { min-width: 112px; padding: 12px 16px; color: var(--dim); font-size: 11px; }
 .endless-button.active { border-color: var(--mint); background: rgba(40, 87, 72, .82); color: var(--mint); }
 .controls { padding: 24px 30px 28px; border: 1px solid var(--line); border-radius: 18px; background: rgba(14, 31, 32, .7); }
-.control-heading { display: flex; justify-content: space-between; align-items: end; margin-bottom: 22px; }
-.control-heading .eyebrow { margin-bottom: 4px; }
-h2 { margin: 0; font: 500 20px "Noto Serif SC", serif; }
-.control-heading > p { margin: 0 0 3px; color: var(--dim); font-size: 11px; }
 .slider-control { display: block; margin-top: 23px; }
+.slider-control:first-child { margin-top: 0; }
 .slider-title, .slider-ends { display: flex; justify-content: space-between; align-items: center; }
 .slider-title { font-size: 12px; }
 .slider-title b { font-weight: 500; }
@@ -66,12 +65,13 @@ footer { display: flex; flex-direction: column; align-items: center; gap: 10px; 
 .disclaimer { margin: 0; color: rgba(145, 170, 161, .58); text-align: center; font-size: 10px; }
 @media (max-width: 600px) {
   .handpan-app { padding: 18px 16px 32px; }
-  .top-note { display: none; }
+  .pack-mark { display: none; }
+  .top-actions { gap: 10px; }
+  .guide-link { font-size: 10px; }
   .intro { padding: 42px 0 24px; }
   .lede { font-size: 12px; }
-  .sound-stage { height: 270px; border-radius: 16px; }
+  .sound-stage { height: 350px; border-radius: 16px; }
   .controls { padding: 21px 19px 24px; }
-  .control-heading > p { max-width: 118px; text-align: right; line-height: 1.5; }
   .transport { gap: 8px; flex-wrap: wrap; }
   .random-button { min-width: 142px; padding-inline: 14px; }
   .endless-button { min-width: 100px; padding-inline: 12px; }

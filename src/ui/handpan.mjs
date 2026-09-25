@@ -27,7 +27,6 @@ const NOTE_NAMES = ["C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A"
 let width = 0;
 let height = 0;
 let activeAnalyser = null;
-let waveformData = null;
 let spectrumData = null;
 
 function readAudioSignal() {
@@ -35,12 +34,10 @@ function readAudioSignal() {
   if (!analyser) return null;
   if (activeAnalyser !== analyser) {
     activeAnalyser = analyser;
-    waveformData = new Float32Array(analyser.fftSize);
     spectrumData = new Float32Array(analyser.frequencyBinCount);
   }
-  analyser.getFloatTimeDomainData(waveformData);
   analyser.getFloatFrequencyData(spectrumData);
-  return { analyser, waveform: waveformData, spectrum: spectrumData };
+  return { analyser, spectrum: spectrumData };
 }
 
 function midiLabel(midi) {
@@ -72,13 +69,9 @@ function applyLocale(locale = getLocale()) {
   const text = {
     handpanSeries: "handpanSeries",
     handpanBack: "handpanBack",
-    handpanOriginal: "handpanOriginal",
-    handpanKicker: "handpanKicker",
-    handpanTuneKicker: "handpanTuneKicker",
+    handpanGuideLink: "handpanGuideLink",
     handpanHeadline: "handpanHeadline",
     handpanLede: "handpanLede",
-    handpanFeel: "handpanFeel",
-    handpanSummary: "handpanSummary",
     handpanMoodLabel: "handpanMoodLabel",
     handpanMoodWarm: "handpanMoodWarm",
     handpanMoodBright: "handpanMoodBright",
@@ -130,22 +123,21 @@ function draw() {
   const signal = readAudioSignal();
   ctx.clearRect(0, 0, width, height);
   const centerX = width / 2;
-  const centerY = height * 0.43;
-  const shellX = Math.min(width * 0.41, 270);
-  const shellY = Math.min(height * 0.31, 98);
+  const centerY = height / 2;
+  const shellRadius = Math.min(width * 0.34, height * 0.39, 170);
 
-  // 手碟壳体俯视轮廓与车削金属环。
-  const shell = ctx.createRadialGradient(centerX - shellX * 0.2, centerY - shellY * 0.4, 8, centerX, centerY, shellX * 1.2);
+  // 手碟壳体俯视轮廓与车削金属环；琴身使用真实的圆形比例。
+  const shell = ctx.createRadialGradient(centerX - shellRadius * 0.2, centerY - shellRadius * 0.25, 8, centerX, centerY, shellRadius * 1.15);
   shell.addColorStop(0, "rgba(88,130,111,.46)");
   shell.addColorStop(0.62, "rgba(31,67,61,.68)");
   shell.addColorStop(1, "rgba(13,31,31,.92)");
   ctx.beginPath();
-  ctx.ellipse(centerX, centerY, shellX, shellY, 0, 0, Math.PI * 2);
+  ctx.arc(centerX, centerY, shellRadius, 0, Math.PI * 2);
   ctx.fillStyle = shell;
   ctx.fill();
   for (let ring = 0; ring < 4; ring++) {
     ctx.beginPath();
-    ctx.ellipse(centerX, centerY, shellX * (0.84 + ring * 0.045), shellY * (0.78 + ring * 0.055), 0, 0, Math.PI * 2);
+    ctx.arc(centerX, centerY, shellRadius * (0.84 + ring * 0.045), 0, Math.PI * 2);
     ctx.strokeStyle = `rgba(201,232,217,${0.09 - ring * 0.014})`;
     ctx.lineWidth = 1;
     ctx.stroke();
@@ -179,44 +171,18 @@ function draw() {
     ctx.font = "10px 'DM Mono', monospace";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
+    ctx.rotate(-rotation);
     ctx.fillText(midiLabel(midi), 0, 0);
     ctx.restore();
   };
 
-  drawField(50, centerX, centerY, Math.min(37, width * 0.1), 23, 0, true);
+  drawField(50, centerX, centerY, shellRadius * 0.21, shellRadius * 0.16, 0, true);
   FIELD_MIDIS.forEach((midi, index) => {
     const angle = -Math.PI / 2 + index * (Math.PI * 2 / FIELD_MIDIS.length);
-    const x = centerX + Math.cos(angle) * shellX * 0.69;
-    const y = centerY + Math.sin(angle) * shellY * 0.63;
-    drawField(midi, x, y, Math.min(28, width * 0.076), 16, angle + Math.PI / 2);
+    const x = centerX + Math.cos(angle) * shellRadius * 0.67;
+    const y = centerY + Math.sin(angle) * shellRadius * 0.67;
+    drawField(midi, x, y, shellRadius * 0.16, shellRadius * 0.105, angle + Math.PI / 2);
   });
-
-  // 底部显示总线的真实时域波形；停音后仍可观察模态和混响尾音。
-  const waveY = height * 0.84;
-  ctx.beginPath();
-  ctx.moveTo(22, waveY);
-  ctx.lineTo(width - 22, waveY);
-  ctx.strokeStyle = "rgba(220,238,224,.12)";
-  ctx.lineWidth = 1;
-  ctx.stroke();
-  if (signal?.waveform) {
-    let peak = 0;
-    for (const sample of signal.waveform) peak = Math.max(peak, Math.abs(sample));
-    const displayGain = peak > 0.0001 ? Math.min(12, 0.62 / peak) : 0;
-    ctx.beginPath();
-    const points = Math.max(100, Math.floor(width * 1.2));
-    for (let i = 0; i < points; i++) {
-      const sampleIndex = Math.floor((i / (points - 1)) * (signal.waveform.length - 1));
-      const sample = signal.waveform[sampleIndex] * displayGain;
-      const x = 22 + (i / (points - 1)) * (width - 44);
-      const y = waveY - sample * Math.min(21, height * 0.075);
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    }
-    ctx.strokeStyle = "rgba(164,224,194,.86)";
-    ctx.lineWidth = 1.2;
-    ctx.stroke();
-  }
 }
 
 function syncControls() {
@@ -230,7 +196,7 @@ function syncControls() {
   document.getElementById("energyValue").textContent =
     energy < 0.28 ? t("handpanSparse") : energy > 0.5 ? t("handpanFlowing") : t("handpanDensityRelaxed");
   document.getElementById("bpmValue").textContent = `${state.config.bpm} BPM`;
-  document.getElementById("scaleName").textContent = t("handpanFixedTuning");
+  document.getElementById("scaleName").textContent = t("handpanTuning");
 }
 
 function syncStats() {

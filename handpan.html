@@ -12,12 +12,13 @@
     <header class="topbar">
       <a class="back-link" id="handpanBack" href="./index.html">← TuneHub</a>
       <span class="pack-mark" id="handpanSeries">TUNEHUB · SOLO SERIES</span>
-      <span class="top-note" id="handpanOriginal">Original generative arrangement</span>
-      <button id="localeBtn" class="locale" type="button" title="Switch language to Chinese">中文</button>
+      <div class="top-actions">
+        <a class="guide-link" id="handpanGuideLink" href="./handpan-guide.html">How the sound works ↗</a>
+        <button id="localeBtn" class="locale" type="button" title="Switch language to Chinese">中文</button>
+      </div>
     </header>
 
     <section class="intro">
-      <p class="eyebrow" id="handpanKicker">HANDPAN / ONE INSTRUMENT</p>
       <h1><span id="handpanHeadline">Handpan</span> <span>Solo</span></h1>
       <p class="lede" id="handpanLede">Let the notes breathe. Every generation is a new handpan solo.</p>
     </section>
@@ -39,10 +40,6 @@
     </section>
 
     <section class="controls" id="handpanControls" aria-label="Handpan performance controls">
-      <div class="control-heading">
-        <div><p class="eyebrow" id="handpanTuneKicker">TUNE THE FEEL</p><h2 id="handpanFeel">Performance feel</h2></div>
-        <p id="handpanSummary">Random melody · restrained hits · long resonance</p>
-      </div>
       <label class="slider-control">
         <span class="slider-title"><b id="handpanMoodLabel">Timbre warmth</b><output id="moodValue">Warm</output></span>
         <input id="mood" type="range" min="0.24" max="0.78" step="0.01" value="0.64">
