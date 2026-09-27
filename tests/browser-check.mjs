@@ -25,6 +25,7 @@ import {
   STREAM_MIME,
   STREAM_SAMPLE_RATE,
 } from '../src/audio/stream-pipeline.mjs';
+import { MediaPlayer } from '../src/audio/media-player.mjs';
 
 const out = [];
 let pass = 0;
@@ -313,6 +314,44 @@ async function run() {
     );
     assert(bestLag < 2000, `对齐滞后过大：${bestLag} 采样（时间轴可能有偏移）`);
     return `${pipe.frameCount} 个 Opus 帧 / ${(size / 1024).toFixed(0)} KiB，滞后 ${bestLag} 采样，相关系数 ${corr.toFixed(4)}`;
+  });
+
+  // ---- 14. 流式播放器的可视化支路：频谱来自 PCM，且不额外养 AudioContext ----
+  await check('流式播放器的可视化支路真的在出声（频谱来自 PCM）', async () => {
+    const seg = generateAmbientSegment({ seed: 'k7f3q9', sceneId: 'reading', config: {}, overrides: {} });
+    const player = new MediaPlayer({ analyse: true });
+    try {
+      const mode = await player.ready();
+      assert(mode === 'stream', `本机没走流式链路：${player.reason}`);
+      await player.load(seg);
+      await player.play(0);
+
+      const analyser = player.bus && player.bus.analyser;
+      assert(analyser, '没有可视化用的频谱取样器');
+      assert(typeof analyser.getFloatFrequencyData === 'function', '取样器缺少 getFloatFrequencyData');
+      assert(analyser.frequencyBinCount === analyser.fftSize / 2, 'frequencyBinCount 不对');
+
+      const spectrum = new Float32Array(analyser.frequencyBinCount);
+      let peakDb = -Infinity;
+      let nonSilentBins = 0;
+      for (let i = 0; i < 40; i++) {
+        analyser.getFloatFrequencyData(spectrum);
+        for (const value of spectrum) {
+          if (value > peakDb) peakDb = value;
+          if (value > -100) nonSilentBins++;
+        }
+        await new Promise((r) => setTimeout(r, 50));
+      }
+
+      // 手碟页的模态环靠这条数据动；全静音就说明它不会动。
+      assert(peakDb > -96, `频谱峰值只有 ${peakDb.toFixed(1)} dB，模态环不会动`);
+      assert(nonSilentBins > 0, '频谱里没有任何非静音 bin');
+      // 这条更重要：流式链路必须没有常驻 AudioContext，否则息屏后台播放就有隐患。
+      assert(player.ctx === null, '流式链路不应该有 AudioContext');
+      return `峰值 ${peakDb.toFixed(1)} dB，${nonSilentBins} 个非静音 bin，ctx=null`;
+    } finally {
+      await player.destroy();
+    }
   });
 
   flush();

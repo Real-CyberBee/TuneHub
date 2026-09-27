@@ -13,6 +13,7 @@ import assert from "node:assert/strict";
 import { WebmOpusMuxer, preSkipFromOpusHead, OPUS_PRE_SKIP_48K } from "../src/audio/webm-muxer.mjs";
 import { detectStreamSupport, STREAM_MIME } from "../src/audio/stream-pipeline.mjs";
 import { MediaPlayer } from "../src/audio/media-player.mjs";
+import { SpectrumTap, downsampleToTap } from "../src/audio/spectrum-tap.mjs";
 
 // --- 最小的 EBML 读取器，只够验证结构 ---------------------------------------
 
@@ -253,4 +254,93 @@ test("探测失败时 MediaPlayer 自动退回实时实现，且接口保持完�
   assert.equal(player.onTick, null);
   assert.equal(player.onProgress, null);
   assert.equal(player.onEnded, null);
+});
+
+// --- 频谱取样器（可视化用，不依赖 Web Audio） --------------------------------
+
+test("频谱取样器：整段静音时给 minDecibels，喂正弦时在该频率出峰", () => {
+  const tap = new SpectrumTap({ fftSize: 2048, sampleRate: 12000 });
+  const bins = new Float32Array(tap.frequencyBinCount);
+
+  tap.setPosition(0);
+  tap.getFloatFrequencyData(bins);
+  assert.ok(bins.every((v) => v === tap.minDecibels), '没有数据时应全是 minDecibels');
+
+  // 12 kHz 下 bin 宽度 = 5.859 Hz；喂 1000 Hz 正弦，峰值应落在 1000 Hz 附近的 bin。
+  const seconds = 1;
+  const samples = new Float32Array(tap.sampleRate * seconds);
+  for (let i = 0; i < samples.length; i++) {
+    samples[i] = 0.8 * Math.sin((2 * Math.PI * 1000 * i) / tap.sampleRate);
+  }
+  tap.push(0, samples);
+  tap.setPosition(seconds);
+  tap.getFloatFrequencyData(bins);
+
+  let peakBin = 0;
+  for (let i = 1; i < bins.length; i++) if (bins[i] > bins[peakBin]) peakBin = i;
+  const peakHz = (peakBin * tap.sampleRate) / tap.fftSize;
+  assert.ok(Math.abs(peakHz - 1000) < 30, `峰值应落在 1 kHz 附近，实际 ${peakHz.toFixed(1)} Hz`);
+  assert.ok(bins[peakBin] > -40, `峰值应足够高，实际 ${bins[peakBin].toFixed(1)} dB`);
+});
+
+test("频谱取样器：播放头走到哪就取哪一段，并丢掉放过去的 PCM", () => {
+  const tap = new SpectrumTap({ fftSize: 512, sampleRate: 12000 });
+  const bins = new Float32Array(tap.frequencyBinCount);
+  // 第 0~1 秒喂 400Hz，第 2~3 秒喂 2000Hz
+  const mk = (hz) => {
+    const a = new Float32Array(12000);
+    for (let i = 0; i < a.length; i++) a[i] = 0.8 * Math.sin((2 * Math.PI * hz * i) / 12000);
+    return a;
+  };
+  tap.push(0, mk(400));
+  tap.push(2, mk(2000));
+
+  const peakHz = (position) => {
+    tap.setPosition(position);
+    tap.getFloatFrequencyData(bins);
+    let best = 0;
+    for (let i = 1; i < bins.length; i++) if (bins[i] > bins[best]) best = i;
+    return (best * tap.sampleRate) / tap.fftSize;
+  };
+  assert.ok(Math.abs(peakHz(1) - 400) < 60, `播放头在 1s 时应听到 400Hz，实际 ${peakHz(1).toFixed(0)}Hz`);
+  assert.ok(Math.abs(peakHz(3) - 2000) < 80, `播放头在 3s 时应听到 2000Hz，实际 ${peakHz(3).toFixed(0)}Hz`);
+});
+
+test("频谱取样器：长时间播放不会无限长内存", () => {
+  const tap = new SpectrumTap({ fftSize: 512, sampleRate: 12000 });
+  const chunk = new Float32Array(12000);
+  for (let i = 0; i < 400; i++) {
+    tap.setPosition(i);
+    tap.push(i, chunk);
+  }
+  let total = 0;
+  for (const c of tap.chunks) total += c.data.length;
+  assert.ok(total <= 152 * 12000, `保留的 PCM 应该封顶在约 150 秒，实际 ${(total / 12000).toFixed(0)} 秒`);
+});
+
+test("频谱取样器：已经渲染到播放头之后的分片不能把取值窗口带偏", () => {
+  const tap = new SpectrumTap({ fftSize: 512, sampleRate: 12000 });
+  const bins = new Float32Array(tap.frequencyBinCount);
+  const tone = (hz) => {
+    const a = new Float32Array(12000);
+    for (let i = 0; i < a.length; i++) a[i] = 0.8 * Math.sin((2 * Math.PI * hz * i) / 12000);
+    return a;
+  };
+  // 真实链路里始终有远超播放头的前瞻缓冲，这里刻意先推一段"未来"的分片。
+  tap.push(0, tone(400));
+  tap.push(2, tone(2000));
+  tap.push(4, tone(3000));
+
+  const peakHz = (position) => {
+    tap.setPosition(position);
+    tap.getFloatFrequencyData(bins);
+    let best = 0;
+    for (let i = 1; i < bins.length; i++) if (bins[i] > bins[best]) best = i;
+    return (best * tap.sampleRate) / tap.fftSize;
+  };
+  // 播放头扫过三个区间，读数必须跟着走；修 bug 前这里只会返回同一个值。
+  assert.ok(Math.abs(peakHz(1) - 400) < 60, `1s 应为 400Hz，实际 ${peakHz(1).toFixed(0)}Hz`);
+  assert.ok(Math.abs(peakHz(3) - 2000) < 80, `3s 应为 2000Hz，实际 ${peakHz(3).toFixed(0)}Hz`);
+  assert.ok(Math.abs(peakHz(5) - 3000) < 100, `5s 应为 3000Hz，实际 ${peakHz(5).toFixed(0)}Hz`);
+  assert.notEqual(peakHz(1).toFixed(0), peakHz(3).toFixed(0), '不同播放头位置必须给出不同的频谱');
 });

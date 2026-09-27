@@ -21,6 +21,7 @@
 
 import { Player } from "./player.mjs";
 import { detectStreamSupport, StreamPipeline, STREAM_MIME } from "./stream-pipeline.mjs";
+import { SpectrumTap, TAP_RATE } from "./spectrum-tap.mjs";
 
 /** 第一片：短一点，先把声音放出来，剩下的边放边补。 */
 const SLICE_FIRST = 4;
@@ -91,8 +92,9 @@ class StreamEngine {
     this.pumpTimer = null;
     this.failure = null;
 
-    this.shadow = null;
-    this.shadowGain = null;
+    this.spectrum = analyse
+      ? new SpectrumTap({ sampleRate: TAP_RATE, positionProvider: () => this.position })
+      : null;
 
     this.onEnded = null;
     this.onTick = null;
@@ -108,30 +110,22 @@ class StreamEngine {
     return true;
   }
 
-  /** 可视化支路：静音跑一遍实时合成，只取频谱，不出声。 */
-  async #ensureShadow() {
-    if (!this.analyse || this.shadow) return;
-    const shadow = new Player({ analyse: true });
-    await shadow.init();
-    const gain = shadow.ctx.createGain();
-    gain.gain.value = 0;
-    // analyser 在 buildMasterBus 里是接去 destination 的，这里改道到 0 增益，
-    // 这样既有频谱又不会和 <audio> 重复出声。
-    try {
-      shadow.bus.analyser.disconnect();
-    } catch {}
-    shadow.bus.analyser.connect(gain);
-    gain.connect(shadow.ctx.destination);
-    this.shadow = shadow;
-    this.shadowGain = gain;
-  }
-
-  get ctx() {
-    return this.shadow ? this.shadow.ctx : null;
-  }
-
+  /**
+   * 可视化：不碰 Web Audio，直接用渲染分片时留下的 PCM 算频谱。
+   * `bus.analyser` 只保证形状和 AnalyserNode 一致，界面代码不用改。
+   */
   get bus() {
-    return this.shadow ? this.shadow.bus : null;
+    return this.spectrum ? { analyser: this.spectrum } : null;
+  }
+
+  /** 流式链路没有常驻 AudioContext —— 这正是息屏后还能继续放的原因。 */
+  get ctx() {
+    return null;
+  }
+
+  /** 可视化用的采样率（PCM 取样率，不是编码采样率）。 */
+  get sampleRate() {
+    return TAP_RATE;
   }
 
   get position() {
@@ -190,7 +184,7 @@ class StreamEngine {
     this.seed = piece.seed ?? "tunehub";
     this.dirty = true;
     if (this.playing) this.#halt();
-    if (this.shadow) await this.shadow.load(piece);
+    this.spectrum?.clear();
   }
 
   extend(piece) {
@@ -202,14 +196,12 @@ class StreamEngine {
     this.events = piece.events;
     this.mix = piece.mix ?? this.mix;
     this.seed = piece.seed ?? this.seed;
-    if (this.shadow) this.shadow.extend(piece);
   }
 
   setMuted(voiceId, muted) {
     const before = this.muted.has(voiceId);
     if (muted) this.muted.add(voiceId);
     else this.muted.delete(voiceId);
-    if (this.shadow) this.shadow.setMuted(voiceId, muted);
     // 已经渲染好的缓冲改不了，只能从当前位置重开一条流。
     if (before !== muted && this.playing) this.#restartAt(this.position);
   }
@@ -223,12 +215,10 @@ class StreamEngine {
   }
 
   async resume() {
-    await this.#ensureShadow();
-    if (this.shadow) await this.shadow.resume();
+    /* 流式链路不需要预热 AudioContext。 */
   }
 
   async play(fromSeconds = null) {
-    await this.#ensureShadow();
     const target = fromSeconds == null
       ? (this.dirty || !this.streamOpen ? 0 : this.position)
       : Math.max(0, fromSeconds);
@@ -245,9 +235,6 @@ class StreamEngine {
     this.playing = true;
     this.#startTicker();
     this.#pumpSoon(0);
-    if (this.shadow) {
-      await this.shadow.play(this.position);
-    }
   }
 
   pause() {
@@ -256,7 +243,6 @@ class StreamEngine {
     this.playing = false;
     this.pendingPosition = at;
     this.#stopTicker();
-    if (this.shadow) this.shadow.pause();
   }
 
   stop() {
@@ -269,7 +255,6 @@ class StreamEngine {
         this.audio.load();
       } catch {}
     }
-    if (this.shadow) this.shadow.stop();
   }
 
   #halt() {
@@ -346,6 +331,7 @@ class StreamEngine {
     this.pipeline = new StreamPipeline({
       onInit: (bytes) => this.#enqueue(bytes),
       onSegment: (bytes) => this.#enqueue(bytes),
+      onPcm: (start, samples) => this.spectrum?.push(start, samples),
       onError: (error) => this.#fail(error),
     });
 
@@ -534,6 +520,7 @@ class StreamEngine {
     // 播放头往前走会吃掉缓冲，所以每次心跳都要把后方补回来。
     // 心跳同时挂在 timeupdate 和定时器上：前者由媒体播放驱动，后台不会被节流。
     this.#pumpSoon(0);
+    this.spectrum?.setPosition(this.position);
     if (this.onTick) {
       try {
         this.onTick(this.#tickPayload());
@@ -542,7 +529,6 @@ class StreamEngine {
       }
     }
     if (this.onProgress) this.onProgress(this.position, this.piece ? this.piece.totalSeconds : 0);
-    if (this.shadow && this.shadow.playing) this.shadow.fill();
   }
 
   #startTicker() {
@@ -567,13 +553,7 @@ class StreamEngine {
   async destroy() {
     this.#halt();
     this.#teardownStream();
-    if (this.shadow) {
-      this.shadow.stop();
-      try {
-        await this.shadow.ctx?.close();
-      } catch {}
-      this.shadow = null;
-    }
+    this.spectrum?.clear();
     if (this.audio) {
       this.audio.remove();
       this.audio = null;
@@ -652,6 +632,12 @@ export class MediaPlayer {
 
   get ctx() {
     return this.impl ? this.impl.ctx : null;
+  }
+
+  /** 可视化用的采样率；实时实现直接给 AudioContext 的采样率。 */
+  get sampleRate() {
+    if (!this.impl) return TAP_RATE;
+    return this.impl.sampleRate ?? (this.impl.ctx ? this.impl.ctx.sampleRate : TAP_RATE);
   }
 
   get bus() {

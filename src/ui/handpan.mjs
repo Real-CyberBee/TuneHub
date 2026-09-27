@@ -159,7 +159,7 @@ function midiLabel(midi) {
 
 function modalEnergy(signal, frequency) {
   if (!signal || frequency <= 0) return 0;
-  const binWidth = player.ctx.sampleRate / signal.analyser.fftSize;
+  const binWidth = player.sampleRate / signal.analyser.fftSize;
   const center = Math.round(frequency / binWidth);
   let peakDb = -120;
   for (let bin = Math.max(0, center - 1); bin <= Math.min(signal.spectrum.length - 1, center + 1); bin++) {

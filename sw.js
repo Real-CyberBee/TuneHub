@@ -46,6 +46,7 @@ const PRECACHE = [
   "./src/audio/media-player.mjs",
   "./src/audio/stream-pipeline.mjs",
   "./src/audio/webm-muxer.mjs",
+  "./src/audio/spectrum-tap.mjs",
   "./src/audio/export.mjs",
   "./src/audio/midi.mjs",
   "./src/core/rng.mjs",

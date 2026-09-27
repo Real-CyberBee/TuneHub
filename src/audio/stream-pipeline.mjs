@@ -19,6 +19,7 @@
 
 import { renderRange } from "./export.mjs";
 import { WebmOpusMuxer, OPUS_PRE_SKIP_48K, preSkipFromOpusHead } from "./webm-muxer.mjs";
+import { downsampleToTap, TAP_RATE } from "./spectrum-tap.mjs";
 
 /** Opus 在 WebM 里的 MIME；MediaSource 用它挑选解码器。 */
 export const STREAM_MIME = 'audio/webm; codecs="opus"';
@@ -81,6 +82,8 @@ export class StreamPipeline {
    * @param {number} options.tailSeconds  每片额外向前多渲染的秒数（覆盖长混响尾巴）
    * @param {(bytes: Uint8Array) => void} options.onInit    初始化段（只能一次）
    * @param {(bytes: Uint8Array) => void} options.onSegment 媒体段（Cluster）
+   * @param {(start: number, samples: Float32Array) => void} options.onPcm
+   *        降采样后的单声道 PCM，给频谱可视化用（不参与编码）
    * @param {(error: Error) => void} options.onError
    */
   constructor({
@@ -90,6 +93,7 @@ export class StreamPipeline {
     tailSeconds = 6,
     onInit = null,
     onSegment = null,
+    onPcm = null,
     onError = null,
   } = {}) {
     this.sampleRate = sampleRate;
@@ -98,6 +102,7 @@ export class StreamPipeline {
     this.tailSeconds = tailSeconds;
     this.onInit = onInit;
     this.onSegment = onSegment;
+    this.onPcm = onPcm;
     this.onError = onError;
 
     this.encoder = null;
@@ -189,6 +194,14 @@ export class StreamPipeline {
     const base = Math.round(tail * this.sampleRate);
     const stop = Math.round((tail + span) * this.sampleRate);
     const planar = new Float32Array(FRAME_SAMPLES * 2);
+
+    // 顺手留一份降采样单声道给可视化；取样范围正好是这一片保留的部分。
+    if (this.onPcm) {
+      const factor = Math.max(1, Math.round(this.sampleRate / TAP_RATE));
+      const kept = left.subarray(base, stop);
+      const keptRight = right === left ? null : right.subarray(base, stop);
+      this.onPcm(start, downsampleToTap(kept, keptRight, factor));
+    }
 
     for (let offset = base; offset + FRAME_SAMPLES <= stop; offset += FRAME_SAMPLES) {
       planar.set(left.subarray(offset, offset + FRAME_SAMPLES), 0);

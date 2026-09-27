@@ -38,6 +38,7 @@ event stream → OfflineAudioContext (far faster than real time)
 
 - The **Media Session API** publishes the current piece to the lock screen, notification shade, headset buttons and keyboard media keys. Play, pause, stop and seek all route back into the player.
 - The pipeline keeps roughly 45 seconds buffered ahead of the playhead; slices are rendered with a six-second overlap that is trimmed away, so the reverb tails survive the joins and the seams are inaudible.
+- The spectrum visualiser is computed from the same rendered PCM (a small FFT over a downsampled copy), so the streaming path holds no `AudioContext` at all. Nothing extra can compete with the media element for background playback.
 - If a device has no WebCodecs, no `MediaSource` or no Opus encoder (Safari today), the same player object silently falls back to live Web Audio synthesis. Everything still works; only the screen-off promise degrades.
 - The cost of this design: changing a slider re-synthesizes the piece, so a tweak takes about a second to be heard instead of being instant.
 
