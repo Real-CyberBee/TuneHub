@@ -128,9 +128,17 @@ export class PlaybackSession {
     } catch {}
   }
 
-  /** 启动保活音轨并进入 playing 状态。必须在用户手势里调用。 */
-  async start() {
+  /**
+   * 启动媒体会话并进入 playing 状态。必须在用户手势里调用。
+   *
+   * @param {object} options
+   * @param {boolean} options.silent  是否额外播放一条静音保活音轨。
+   *   只有"Web Audio 直接出声"那条链路才需要它——真正的 `<audio>` 输出
+   *   本身就是媒体播放，再叠一条静音轨没有意义。
+   */
+  async start({ silent = true } = {}) {
     this.setState("playing");
+    if (!silent && !this.audio) return;
     if (this.audio) {
       if (this.audio.paused) {
         try {

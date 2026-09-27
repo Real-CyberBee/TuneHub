@@ -15,9 +15,16 @@
 
 import { generate, VOICES, analyzePleasantness } from '../src/core/generate.mjs';
 import { SCALES } from '../src/core/model.mjs';
+import { generateAmbientSegment } from '../src/core/ambient.mjs';
 import { Player } from '../src/audio/player.mjs';
 import { renderRange, encodeWav } from '../src/audio/export.mjs';
 import { prepareEvents } from '../src/audio/engine.mjs';
+import {
+  StreamPipeline,
+  detectStreamSupport,
+  STREAM_MIME,
+  STREAM_SAMPLE_RATE,
+} from '../src/audio/stream-pipeline.mjs';
 
 const out = [];
 let pass = 0;
@@ -239,6 +246,73 @@ async function run() {
     assert(s.verdict !== 'poor', `verdict=${s.verdict}`);
     assert(s.harshRate < 0.03, `不协和率 ${s.harshRate}`);
     return `悦耳度 ${(s.pleasantness * 100).toFixed(0)}%, 不协和率 ${(s.harshRate * 100).toFixed(2)}%`;
+  });
+
+  // ---- 13. 流式链路：能编码、能封装、能被浏览器解回来，且与离线参考高度一致 ----
+  await check('流式播放链路（Opus/WebM）可解码且与参考渲染一致', async () => {
+    const support = await detectStreamSupport();
+    assert(support.ok, `本机不支持流式链路：${support.reason}`);
+    assert(MediaSource.isTypeSupported(STREAM_MIME), `MSE 不支持 ${STREAM_MIME}`);
+
+    const seg = generateAmbientSegment({ seed: 'k7f3q9', sceneId: 'reading', config: {}, overrides: {} });
+    const mix = seg.mix ?? {};
+    const seed = seg.seed ?? 'tunehub';
+    const total = 12;
+
+    const ref = await renderRange(seg.events, {
+      start: 0, duration: total, sampleRate: STREAM_SAMPLE_RATE, tail: 0, fadeOut: 0, ...mix, seed,
+    });
+
+    const parts = [];
+    const pipe = new StreamPipeline({
+      onInit: (b) => parts.push(b),
+      onSegment: (b) => parts.push(b),
+    });
+    await pipe.open();
+    let at = 0;
+    while (at < total - 0.01) {
+      at = await pipe.produce({ events: seg.events, mix, seed, start: at, duration: 4 });
+    }
+    const last = await pipe.close();
+    if (last) parts.push(last);
+    assert(parts.length >= 2, '应当至少产出初始化段和媒体段');
+
+    let size = 0;
+    for (const p of parts) size += p.length;
+    const merged = new Uint8Array(size);
+    let offset = 0;
+    for (const p of parts) { merged.set(p, offset); offset += p.length; }
+
+    const ac = new AudioContext({ sampleRate: STREAM_SAMPLE_RATE });
+    const decoded = await ac.decodeAudioData(merged.buffer);
+    const R = ref.getChannelData(0);
+    const D = decoded.getChannelData(0);
+    assert(D.length >= R.length, `解码长度异常 ${D.length} < ${R.length}`);
+
+    // Opus 有编码器延迟，先在前 3 秒里搜一个最佳对齐点，再算整段相关系数。
+    const corrAt = (lag, span) => {
+      let sx = 0, sy = 0, sxx = 0, syy = 0, sxy = 0, n = 0;
+      const stop = Math.min(span, R.length);
+      for (let i = 0; i < stop; i += 8) {
+        const x = R[i], y = D[i + lag];
+        if (y === undefined) break;
+        sx += x; sy += y; sxx += x * x; syy += y * y; sxy += x * y; n++;
+      }
+      return n < 16 ? -2 : (n * sxy - sx * sy) / Math.sqrt((n * sxx - sx * sx) * (n * syy - sy * sy));
+    };
+    let bestLag = 0, best = -2;
+    for (let lag = 0; lag <= 4000; lag += 2) {
+      const c = corrAt(lag, STREAM_SAMPLE_RATE * 3);
+      if (c > best) { best = c; bestLag = lag; }
+    }
+    const corr = corrAt(bestLag, R.length);
+    await ac.close();
+    assert(
+      corr > 0.98,
+      `与参考渲染相关性过低：${corr.toFixed(4)}（对齐滞后 ${bestLag} 采样；解码 ${D.length} 帧 vs 参考 ${R.length} 帧）`,
+    );
+    assert(bestLag < 2000, `对齐滞后过大：${bestLag} 采样（时间轴可能有偏移）`);
+    return `${pipe.frameCount} 个 Opus 帧 / ${(size / 1024).toFixed(0)} KiB，滞后 ${bestLag} 采样，相关系数 ${corr.toFixed(4)}`;
   });
 
   flush();

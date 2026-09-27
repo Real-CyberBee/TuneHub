@@ -17,7 +17,8 @@ import {
   generateAmbientSegment,
   getAmbientScene,
 } from "../core/ambient.mjs";
-import { Player, LOOKAHEAD_HIDDEN, LOOKAHEAD_VISIBLE } from "../audio/player.mjs";
+import { LOOKAHEAD_HIDDEN, LOOKAHEAD_VISIBLE } from "../audio/player.mjs";
+import { MediaPlayer } from "../audio/media-player.mjs";
 import {
   exportWav,
   exportStems,
@@ -56,14 +57,26 @@ const state = {
   busy: false,
 };
 
-const player = new Player();
+/**
+ * 播放器：优先走"离线渲染 → 编码 → 真 <audio>"的流式链路（息屏能继续放），
+ * 设备不支持时同一个对象会自动退回实时 Web Audio，接口完全一致。
+ */
+const player = new MediaPlayer();
+player.ready().then((mode) => {
+  if (mode !== "stream") console.info("[TuneHub] 流式播放不可用，退回实时合成：", player.reason);
+});
 
-/** 锁屏 / 后台播放桥接：静音保活音轨 + Media Session 控件。 */
+/** 锁屏 / 后台播放桥接：Media Session 控件（流式链路下不需要静音保活音轨）。 */
 const session = new PlaybackSession({
   getContext: () => player.ctx,
   isPlaying: () => player.playing,
 });
 session.watchContext();
+
+/** 只有实时 Web Audio 那条链路才需要静音保活音轨来"骗"系统。 */
+function startSession() {
+  return session.start({ silent: player.mode !== "stream" });
+}
 
 function setPlayButton(playing) {
   const button = document.getElementById("playBtn");
@@ -88,7 +101,7 @@ async function resumeFromSession() {
   try {
     await player.play();
     setPlayButton(true);
-    await session.start();
+    await startSession();
   } catch (err) {
     setHint(t("playFailed", { error: err.message }), "warn");
   }
@@ -113,7 +126,7 @@ async function seekFromSession(details) {
   try {
     await player.play(details.seekTime);
     setPlayButton(true);
-    await session.start();
+    await startSession();
   } catch (err) {
     setHint(t("playFailed", { error: err.message }), "warn");
   }
@@ -634,7 +647,7 @@ async function togglePlay() {
   try {
     setHint(t("startingAudio"));
     // 保活音轨必须在用户手势的同一个任务里启动，所以在 await 播放器之前先点火。
-    const keepAlive = session.start();
+    const keepAlive = startSession();
     await player.play(0);
     setPlayButton(true);
     updateSessionMetadata();

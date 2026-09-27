@@ -27,12 +27,21 @@ An installed TuneHub launches without browser chrome and precaches the whole stu
 
 ### Playback with the screen off
 
-Playback is built to survive a locked screen:
+Phones only grant background playback to a **real media element**. A Web Audio graph wired straight to the speakers gets no audio focus, and Android Chrome throttles and then freezes the page about a minute after the screen goes dark — the music stops. So TuneHub does not play Web Audio directly. It renders the piece ahead of the playhead and hands real audio to an `<audio>` element:
 
-- A looping silent track keeps the browser's audio session alive, and the **Media Session API** publishes the current piece to the lock screen, notification shade, headset buttons and keyboard media keys. Play, pause, stop and seek all route back into the player.
-- When the page is hidden, the scheduler widens its lookahead from 0.65 s to 25 s, so a throttled background timer cannot punch holes in the music. Endless mode composes its next segment from that same timer rather than `requestAnimationFrame`, which browsers stop running in the background.
+```
+event stream → OfflineAudioContext (far faster than real time)
+             → WebCodecs AudioEncoder (Opus)
+             → WebM muxer (written from scratch, no dependencies)
+             → MediaSource → <audio>
+```
 
-Platform reality check: on Android the music keeps playing with the screen off and the app in the background. On iOS, Safari decides how long Web Audio survives a locked screen — the audio session above markedly improves it, and the context resumes automatically when you return, but a long lock can still suspend it. That is a platform limit, not a TuneHub setting.
+- The **Media Session API** publishes the current piece to the lock screen, notification shade, headset buttons and keyboard media keys. Play, pause, stop and seek all route back into the player.
+- The pipeline keeps roughly 45 seconds buffered ahead of the playhead; slices are rendered with a six-second overlap that is trimmed away, so the reverb tails survive the joins and the seams are inaudible.
+- If a device has no WebCodecs, no `MediaSource` or no Opus encoder (Safari today), the same player object silently falls back to live Web Audio synthesis. Everything still works; only the screen-off promise degrades.
+- The cost of this design: changing a slider re-synthesizes the piece, so a tweak takes about a second to be heard instead of being instant.
+
+Platform reality check: on Android the music now keeps playing with the screen off, because the operating system sees an ordinary media stream. On iOS the fallback path still depends on how long Safari lets an AudioContext live after a lock. That is a platform limit, not a TuneHub setting.
 
 ## Deploy your own copy
 

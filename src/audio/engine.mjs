@@ -795,9 +795,13 @@ function playPercOn(ctx, destination, event, t, noiseSeed = "tunehub") {
     );
     const buf = ctx.createBuffer(1, noiseLen, ctx.sampleRate);
     const d = buf.getChannelData(0);
-    // 每个事件一条独立但确定的噪声：同事件重复渲染得到完全相同的底噪
+    // 每个事件一条独立但确定的噪声：同事件重复渲染得到完全相同的底噪。
+    // 种子必须取**作品里的绝对时间**（event.time），不能取 startTime——后者是
+    // "相对本次渲染起点"的时间，同一个音符在不同区间的渲染里会得到不同的噪声，
+    // 于是区间导出与整段导出对不上，流式播放的分片边界上噪声还会突变。
+    const at = Number.isFinite(event.time) ? event.time : event.startTime;
     const base = seedBase(
-      `${noiseSeed}|${event.timbre}|${event.startTime.toFixed(4)}`,
+      `${noiseSeed}|${event.timbre}|${at.toFixed(4)}`,
       "perc-noise",
     );
     for (let i = 0; i < noiseLen; i++) d[i] = detNoise32(base + i) * 2 - 1;
